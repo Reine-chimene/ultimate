@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #0a0a0b;
+    --bg-secondary: #141016;
+    --bg-card: #1a1218;
+    --wine: #6b1d3a;
+    --wine-light: #8b2a4d;
+    --gold: #c9a962;
+    --gold-light: #dfc88a;
+    --accent: #e8a0b4;
+    --text-primary: #f5f0e8;
+    --text-muted: #9a8f8a;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-[#0a0a0b] text-[#f5f0e8] antialiased;
+    background-image: radial-gradient(ellipse at top, rgba(107, 29, 58, 0.15) 0%, transparent 50%);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+}
+
+@layer utilities {
+  .text-gradient-gold {
+    @apply bg-gradient-to-r from-[#c9a962] to-[#dfc88a] bg-clip-text text-transparent;
+  }
+
+  .glass-card {
+    @apply rounded-2xl border border-white/5 bg-[#1a1218]/80 backdrop-blur-sm shadow-xl;
+  }
+
+  .btn-primary {
+    @apply rounded-full bg-gradient-to-r from-[#6b1d3a] to-[#8b2a4d] px-6 py-3 font-medium text-white transition-all hover:shadow-lg hover:shadow-[#6b1d3a]/30 active:scale-[0.98];
+  }
+
+  .btn-gold {
+    @apply rounded-full bg-gradient-to-r from-[#c9a962] to-[#b8944d] px-6 py-3 font-semibold text-[#0a0a0b] transition-all hover:shadow-lg hover:shadow-[#c9a962]/20 active:scale-[0.98];
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[#f5f0e8] placeholder:text-[#9a8f8a] outline-none transition focus:border-[#c9a962]/50 focus:ring-1 focus:ring-[#c9a962]/30;
+  }
+}

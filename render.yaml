@@ -1,0 +1,38 @@
+# Déploiement gratuit sur Render.com
+# https://render.com — créer un compte, connecter GitHub, "New Blueprint"
+
+services:
+  - type: web
+    name: ultimate-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ultimate-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+
+  - type: web
+    name: ultimate-web
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+
+databases:
+  - name: ultimate-db
+    plan: free
+    databaseName: ultimate
+    user: ultimate
