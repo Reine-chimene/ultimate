@@ -1,14 +1,12 @@
-# Déployer ULTIMATE — Neon + Koyeb + Netlify
+# Déployer ULTIMATE — Neon + Fly.io + Netlify
 
-Stack recommandée **sans carte bancaire** :
+| Rôle | Service | URL |
+|------|---------|-----|
+| Base de données | **Neon** | https://neon.tech |
+| Backend API | **Fly.io** | https://fly.io |
+| Frontend | **Netlify** | https://app.netlify.com |
 
-| Rôle | Service |
-|------|---------|
-| Base de données | **Neon** |
-| Backend API | **Koyeb** |
-| Frontend | **Netlify** |
-
-> Fly.io et Render demandent une carte bancaire. Koyeb fonctionne généralement sans.
+> Fly.io demande une carte (même pour le gratuit). Aucun frais tant que vous restez dans les limites free tier.
 
 ---
 
@@ -20,113 +18,91 @@ Stack recommandée **sans carte bancaire** :
    ```
    postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require
    ```
-4. Gardez-la pour l'étape 2.
 
 ---
 
-## ÉTAPE 2 — Koyeb (backend API)
+## ÉTAPE 2 — Fly.io (backend)
 
-### 2.1 Créer le compte
+### 2.1 Carte bancaire (une seule fois)
 
-1. https://app.koyeb.com → **Sign up with GitHub**
-2. Pas de carte bancaire dans la majorité des cas
+1. https://fly.io/dashboard/personal/billing
+2. Ajoutez votre carte prépayée
+3. Fly.io peut faire une vérification temporaire (~$5) — remboursée
 
-### 2.2 Créer l'application
+### 2.2 Installer le CLI
 
-1. **Create App**
-2. **GitHub** → autorisez → repo **`Reine-chimene/ultimate`**
-3. Paramètres du service :
-
-| Champ | Valeur |
-|-------|--------|
-| **Name** | `ultimate-api` |
-| **Builder** | Dockerfile |
-| **Dockerfile** | `backend/Dockerfile` |
-| **Work directory** | `backend` |
-| **Port** | `8000` |
-| **Instance** | **Free** (512 MB) |
-| **Region** | Washington D.C. ou Frankfurt |
-
-4. **Environment variables** (cliquez Add variable) :
-
-| Key | Value |
-|-----|--------|
-| `DATABASE_URL` | *(URL Neon de l'étape 1)* |
-| `SECRET_KEY` | `ultimate-secret-changez-moi-abc123xyz789` |
-| `CORS_ORIGINS` | `https://placeholder.netlify.app` *(temporaire)* |
-| `ENVIRONMENT` | `production` |
-
-5. **Deploy**
-
-### 2.3 Vérifier
-
-Attendez 5–8 min (build Docker). Notez l'URL :
-
-```
-https://ultimate-api-XXXX.koyeb.app/health
+```bash
+curl -L https://fly.io/install.sh | sh
+export PATH="$HOME/.fly/bin:$PATH"
+fly auth login
 ```
 
-Réponse attendue : `{"status":"ok","service":"ultimate-backend"}`
+### 2.3 Déployer
+
+```bash
+cd ~/Documents/ultimate/backend
+
+# Si pas encore lancé :
+fly launch --no-deploy --copy-config --name ultimate-api
+# → Postgres : No | Redis : No | Deploy now : No
+
+# Secrets (remplacez les valeurs)
+fly secrets set \
+  DATABASE_URL="postgresql://USER:PASS@ep-xxx.neon.tech/neondb?sslmode=require" \
+  SECRET_KEY="ultimate-secret-changez-moi-abc123xyz789" \
+  CORS_ORIGINS="https://temp.netlify.app" \
+  ENVIRONMENT="production"
+
+# Déployer
+fly deploy
+```
+
+### 2.4 Vérifier
+
+```bash
+curl https://ultimate-api.fly.dev/health
+```
+
+Réponse : `{"status":"ok","service":"ultimate-backend"}`
 
 ---
 
 ## ÉTAPE 3 — Netlify (frontend)
 
 1. https://app.netlify.com → **Sign up with GitHub**
-2. **Add new site** → **Import an existing project**
-3. Repo : **`Reine-chimene/ultimate`**
-4. Netlify lit `netlify.toml` automatiquement
-5. **Environment variables** :
+2. **Add new site** → Import **`Reine-chimene/ultimate`**
+3. Variable :
 
 | Key | Value |
 |-----|--------|
-| `NEXT_PUBLIC_API_URL` | `https://ultimate-api-XXXX.koyeb.app` |
+| `NEXT_PUBLIC_API_URL` | `https://ultimate-api.fly.dev` |
 
-6. **Deploy site**
-7. Notez l'URL Netlify : `https://xxx.netlify.app`
-
----
-
-## ÉTAPE 4 — Mettre à jour CORS
-
-Dans Koyeb → votre app → **Settings** → **Environment variables** :
-
-```
-CORS_ORIGINS = https://votre-url-reelle.netlify.app
-```
-
-Redéployez (bouton **Redeploy**).
+4. **Deploy** → notez l'URL Netlify
 
 ---
 
-## ÉTAPE 5 — Tester
+## ÉTAPE 4 — CORS
 
-1. Ouvrez l'URL Netlify
-2. Login : `demo@ultimate.ca` / `Demo123!`
-3. Admin : `admin@ultimate.ca` / `Admin123!`
-
-> Koyeb free : cold start ~10–30 sec après 1h sans activité.
-
----
-
-## Message client
-
-```
-🌐 ULTIMATE — démo
-https://votre-url.netlify.app
-
-Comptes test :
-• demo@ultimate.ca / Demo123!
-• admin@ultimate.ca / Admin123!
+```bash
+fly secrets set CORS_ORIGINS="https://votre-url.netlify.app"
 ```
 
 ---
 
-## Plan B — SnapDeploy (si Koyeb demande une carte)
+## Comptes démo client
 
-1. https://snapdeploy.dev → Sign up (sans carte)
-2. **New Container** → GitHub → `Reine-chimene/ultimate`
-3. Dockerfile path : `backend/Dockerfile`
-4. Port : `8000`
-5. Mêmes variables d'environnement
-6. Netlify avec `NEXT_PUBLIC_API_URL` = URL SnapDeploy
+```
+demo@ultimate.ca / Demo123!
+admin@ultimate.ca / Admin123!
+```
+
+---
+
+## Commandes utiles
+
+```bash
+fly logs              # voir les logs
+fly status            # état de l'app
+fly deploy            # redéployer après modification
+git push origin main  # Netlify redéploie le frontend auto
+```
