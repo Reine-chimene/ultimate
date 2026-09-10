@@ -1,5 +1,4 @@
 # Frontend ULTIMATE sur Netlify
-# Import : https://app.netlify.com → Add new site → Import from Git → Reine-chimene/ultimate
 
 [build]
   base = "frontend"
@@ -11,5 +10,11 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  NEXT_PUBLIC_API_URL = ""
+  API_PROXY_TARGET = "https://ultimate-api.fly.dev"
 
-# Redirections SPA gérées par le plugin Next.js
+[[redirects]]
+  from = "/api/v1/*"
+  to = "https://ultimate-api.fly.dev/api/v1/:splat"
+  status = 200
+  force = true
