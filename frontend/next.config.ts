@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // standalone uniquement pour Docker ; Netlify/Vercel utilisent leur propre runtime
+  ...(process.env.DOCKER_BUILD === "true" ? { output: "standalone" as const } : {}),
   reactStrictMode: true,
   images: {
     remotePatterns: [

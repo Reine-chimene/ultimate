@@ -1,127 +1,130 @@
-# Déployer ULTIMATE gratuitement (démo client)
+# Déployer ULTIMATE — Neon + Netlify + Render
 
-## Option recommandée : Vercel + Render + Neon (100% gratuit)
+> **Stack recommandée** : Neon (DB) + Render (API) + Netlify (frontend)  
+> Vercel fonctionne aussi pour le frontend, mais Netlify est parfait pour Next.js.
 
-| Composant | Service | Gratuit |
-|-----------|---------|---------|
-| Frontend Next.js | [Vercel](https://vercel.com) | ✅ Oui |
-| Backend FastAPI | [Render](https://render.com) | ✅ Oui (sleep après 15 min inactivité) |
-| PostgreSQL | [Neon](https://neon.tech) | ✅ Oui (512 Mo) |
+Je ne peux pas créer vos comptes à votre place — une connexion GitHub suffit sur chaque plateforme (2–3 clics chacune).
 
 ---
 
-## Étape 1 — Pousser le code sur GitHub
+## Architecture
 
-```bash
-cd ultimate
-git init -b main
-git add -A
-git commit -m "ULTIMATE MVP — plateforme de rencontres"
 ```
-
-Créez un repo sur https://github.com/new (nom : `ultimate`, privé recommandé), puis :
-
-```bash
-git remote add origin https://github.com/VOTRE-USERNAME/ultimate.git
-git push -u origin main
+Client (navigateur)
+       ↓
+Netlify  →  frontend Next.js  (https://ultimate-xxx.netlify.app)
+       ↓
+Render   →  backend FastAPI   (https://ultimate-api.onrender.com)
+       ↓
+Neon     →  PostgreSQL        (gratuit, 512 Mo)
 ```
 
 ---
 
-## Étape 2 — Base de données Neon (gratuit)
+## Étape 1 — Neon (base de données) ~3 min
 
-1. Allez sur https://neon.tech → créer un compte
-2. **New Project** → nom `ultimate`
-3. Copiez la connection string (format `postgresql://...`)
-4. Remplacez `postgresql://` par `postgresql+asyncpg://` pour le backend
+1. https://neon.tech → **Sign up** (avec GitHub)
+2. **New Project** → nom : `ultimate`
+3. Copiez la **Connection string** (format `postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require`)
+4. Gardez-la — vous en aurez besoin à l'étape 2
 
-Exemple :
-```
-postgresql+asyncpg://user:pass@ep-xxx.us-east-2.aws.neon.tech/ultimate?sslmode=require
-```
+> Le backend convertit automatiquement `postgresql://` en `postgresql+asyncpg://`
 
 ---
 
-## Étape 3 — Backend sur Render (gratuit)
+## Étape 2 — Render (backend API) ~5 min
 
-1. https://render.com → **New +** → **Web Service**
-2. Connectez votre repo GitHub `ultimate`
-3. Paramètres :
-   - **Root Directory** : `backend`
-   - **Runtime** : Docker
-   - **Plan** : Free
-4. Variables d'environnement :
+1. https://render.com → **Sign up** (avec GitHub)
+2. **New +** → **Web Service**
+3. Connectez le repo **`Reine-chimene/ultimate`**
+4. Paramètres :
 
-| Variable | Valeur |
-|----------|--------|
-| `DATABASE_URL` | URL Neon (avec `postgresql+asyncpg://`) |
-| `SECRET_KEY` | Une longue chaîne aléatoire |
-| `CORS_ORIGINS` | `https://votre-app.vercel.app` (après étape 4) |
+| Champ | Valeur |
+|-------|--------|
+| Name | `ultimate-api` |
+| Root Directory | `backend` |
+| Runtime | **Docker** |
+| Instance Type | **Free** |
+
+5. **Environment Variables** :
+
+| Key | Value |
+|-----|--------|
+| `DATABASE_URL` | *(coller l'URL Neon de l'étape 1)* |
+| `SECRET_KEY` | *(générer une longue chaîne aléatoire)* |
 | `ENVIRONMENT` | `production` |
+| `CORS_ORIGINS` | `https://VOTRE-SITE.netlify.app` *(après étape 3)* |
 
-5. Déployez → notez l'URL : `https://ultimate-api-xxxx.onrender.com`
+6. **Create Web Service** → attendez le déploiement (~5 min)
+7. Notez l'URL : `https://ultimate-api-xxxx.onrender.com`
+8. Test : `https://ultimate-api-xxxx.onrender.com/health` → `{"status":"ok"}`
 
-6. **Premier démarrage** : les migrations et le seed s'exécutent automatiquement via `entrypoint.sh`
+> Le seed (15 profils démo) s'exécute automatiquement au premier démarrage.
 
 ---
 
-## Étape 4 — Frontend sur Vercel (gratuit)
+## Étape 3 — Netlify (frontend) ~3 min
 
-1. https://vercel.com → **Add New Project**
-2. Importez le repo GitHub `ultimate`
-3. Paramètres :
-   - **Root Directory** : `frontend`
-   - **Framework** : Next.js (auto-détecté)
-4. Variable d'environnement :
+1. https://app.netlify.com → **Sign up** (avec GitHub)
+2. **Add new site** → **Import an existing project** → **GitHub**
+3. Choisissez **`Reine-chimene/ultimate`**
+4. Netlify détecte `netlify.toml` automatiquement. Vérifiez :
 
-| Variable | Valeur |
-|----------|--------|
+| Champ | Valeur |
+|-------|--------|
+| Base directory | `frontend` |
+| Build command | `npm run build` |
+
+5. **Environment variables** → **Add variable** :
+
+| Key | Value |
+|-----|--------|
 | `NEXT_PUBLIC_API_URL` | `https://ultimate-api-xxxx.onrender.com` |
 
-5. Déployez → URL : `https://ultimate-xxxx.vercel.app`
+6. **Deploy site**
+7. URL finale : `https://random-name.netlify.app` (renommable dans Site settings → Domain)
 
-6. Retournez sur Render → mettez à jour `CORS_ORIGINS` avec l'URL Vercel exacte
-
----
-
-## Étape 5 — Envoyer le lien au client
-
-```
-🌐 Application : https://ultimate-xxxx.vercel.app
-
-Comptes démo :
-• Utilisateur : demo@ultimate.ca / Demo123!
-• Admin     : admin@ultimate.ca / Admin123!
-```
-
-> ⚠️ Render free tier : le backend met ~30 secondes à démarrer s'il était inactif. Prévenez le client de patienter au premier chargement.
+8. **Retour sur Render** → mettez à jour `CORS_ORIGINS` avec l'URL Netlify exacte → redeploy
 
 ---
 
-## Option 2 — Tout sur Render (Blueprint)
+## Étape 4 — Envoyer au client
 
-1. Push sur GitHub
-2. Render → **New Blueprint** → connecter le repo
-3. Le fichier `render.yaml` configure backend + frontend + DB
-4. Définir `CORS_ORIGINS` et `NEXT_PUBLIC_API_URL` manuellement après déploiement
+```
+🌐 ULTIMATE — démo
+https://votre-site.netlify.app
+
+Comptes test :
+• demo@ultimate.ca / Demo123!
+• admin@ultimate.ca / Admin123!
+
+⚠️ Premier chargement : ~30 sec (Render free tier se réveille)
+```
 
 ---
 
-## Option 3 — Démo locale avec tunnel (temporaire, sans hébergement)
+## Vercel vs Netlify ?
 
-Pour une démo rapide sans déployer :
+| | Netlify | Vercel |
+|---|---------|--------|
+| Next.js | ✅ Excellent | ✅ Excellent (créateurs de Next.js) |
+| Gratuit | ✅ Oui | ✅ Oui |
+| Import GitHub | ✅ 1 clic | ✅ 1 clic |
 
-```bash
-# Terminal 1
-docker compose up
+**Les deux conviennent.** Vous avez choisi Netlify — c'est parfait.
 
-# Terminal 2 — tunnel public gratuit
-npx localtunnel --port 3100
-```
+---
 
-Vous obtenez un lien `https://xxxx.loca.lt` à envoyer au client (valide tant que votre PC est allumé).
+## Limites du free tier
 
-Pour ngrok :
-```bash
-ngrok http 3100
-```
+- **Render** : API endormie après 15 min → 30 sec au réveil
+- **Neon** : 512 Mo, projet suspendu après 7 jours d'inactivité (clic pour réactiver)
+- **Netlify** : 100 Go bande passante/mois — largement suffisant pour une démo
+
+---
+
+## Mise à jour du code
+
+Après chaque `git push` sur `main` :
+- **Netlify** redéploie le frontend automatiquement
+- **Render** redéploie le backend automatiquement

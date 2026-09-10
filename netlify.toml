@@ -1,0 +1,15 @@
+# Frontend ULTIMATE sur Netlify
+# Import : https://app.netlify.com → Add new site → Import from Git → Reine-chimene/ultimate
+
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Redirections SPA gérées par le plugin Next.js
