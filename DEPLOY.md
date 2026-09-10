@@ -1,90 +1,102 @@
-# Déployer ULTIMATE — Neon + Netlify + Render
+# Déployer ULTIMATE — Neon + Fly.io + Netlify
 
-> **Stack recommandée** : Neon (DB) + Render (API) + Netlify (frontend)  
-> Vercel fonctionne aussi pour le frontend, mais Netlify est parfait pour Next.js.
+Stack : **Neon** (DB) + **Fly.io** (API) + **Netlify** (frontend)
 
-Je ne peux pas créer vos comptes à votre place — une connexion GitHub suffit sur chaque plateforme (2–3 clics chacune).
+> Render inaccessible ? Fly.io est l'alternative recommandée (Docker natif, gratuit).
 
 ---
 
 ## Architecture
 
 ```
-Client (navigateur)
-       ↓
-Netlify  →  frontend Next.js  (https://ultimate-xxx.netlify.app)
-       ↓
-Render   →  backend FastAPI   (https://ultimate-api.onrender.com)
-       ↓
-Neon     →  PostgreSQL        (gratuit, 512 Mo)
+Navigateur
+    ↓
+Netlify   →  https://ultimate.netlify.app        (frontend)
+    ↓
+Fly.io    →  https://ultimate-api.fly.dev        (backend FastAPI)
+    ↓
+Neon      →  PostgreSQL                          (base de données)
 ```
 
 ---
 
 ## Étape 1 — Neon (base de données) ~3 min
 
-1. https://neon.tech → **Sign up** (avec GitHub)
-2. **New Project** → nom : `ultimate`
-3. Copiez la **Connection string** (format `postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require`)
-4. Gardez-la — vous en aurez besoin à l'étape 2
-
-> Le backend convertit automatiquement `postgresql://` en `postgresql+asyncpg://`
+1. https://neon.tech → **Sign up with GitHub**
+2. **New project** → nom : `ultimate` → région : `AWS US East` ou `Canada` si dispo
+3. **Connection string** → copiez l'URL `postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require`
+4. Gardez-la pour l'étape 2
 
 ---
 
-## Étape 2 — Render (backend API) ~5 min
+## Étape 2 — Fly.io (backend API) ~10 min
 
-1. https://render.com → **Sign up** (avec GitHub)
-2. **New +** → **Web Service**
-3. Connectez le repo **`Reine-chimene/ultimate`**
-4. Paramètres :
+### 2a. Créer un compte
 
-| Champ | Valeur |
-|-------|--------|
-| Name | `ultimate-api` |
-| Root Directory | `backend` |
-| Runtime | **Docker** |
-| Instance Type | **Free** |
+1. https://fly.io/app/sign-up → **Sign up with GitHub**
+2. Installez le CLI (Linux) :
 
-5. **Environment Variables** :
+```bash
+curl -L https://fly.io/install.sh | sh
+export FLYCTL_INSTALL="$HOME/.fly"
+export PATH="$FLYCTL_INSTALL/bin:$PATH"
+fly auth login
+```
 
-| Key | Value |
-|-----|--------|
-| `DATABASE_URL` | *(coller l'URL Neon de l'étape 1)* |
-| `SECRET_KEY` | *(générer une longue chaîne aléatoire)* |
-| `ENVIRONMENT` | `production` |
-| `CORS_ORIGINS` | `https://VOTRE-SITE.netlify.app` *(après étape 3)* |
+### 2b. Déployer le backend
 
-6. **Create Web Service** → attendez le déploiement (~5 min)
-7. Notez l'URL : `https://ultimate-api-xxxx.onrender.com`
-8. Test : `https://ultimate-api-xxxx.onrender.com/health` → `{"status":"ok"}`
+```bash
+cd ~/Documents/ultimate/backend
 
-> Le seed (15 profils démo) s'exécute automatiquement au premier démarrage.
+# Créer l'app (répondre aux questions — ne pas créer de Postgres Fly, vous utilisez Neon)
+fly launch --no-deploy --copy-config --name ultimate-api
+
+# Secrets (remplacez par vos vraies valeurs)
+fly secrets set \
+  DATABASE_URL="postgresql://USER:PASS@ep-xxx.neon.tech/neondb?sslmode=require" \
+  SECRET_KEY="votre-cle-secrete-longue-et-aleatoire" \
+  CORS_ORIGINS="https://VOTRE-SITE.netlify.app" \
+  ENVIRONMENT="production"
+
+# Déployer
+fly deploy
+```
+
+### 2c. Vérifier
+
+```bash
+fly open /health
+# ou
+curl https://ultimate-api.fly.dev/health
+```
+
+Réponse attendue : `{"status":"ok","service":"ultimate-backend"}`
+
+> Le seed (15 profils démo) s'exécute au premier démarrage.
 
 ---
 
-## Étape 3 — Netlify (frontend) ~3 min
+## Étape 3 — Netlify (frontend) ~5 min
 
-1. https://app.netlify.com → **Sign up** (avec GitHub)
-2. **Add new site** → **Import an existing project** → **GitHub**
-3. Choisissez **`Reine-chimene/ultimate`**
-4. Netlify détecte `netlify.toml` automatiquement. Vérifiez :
-
-| Champ | Valeur |
-|-------|--------|
-| Base directory | `frontend` |
-| Build command | `npm run build` |
-
-5. **Environment variables** → **Add variable** :
+1. https://app.netlify.com → **Sign up with GitHub**
+2. **Add new site** → **Import an existing project** → GitHub
+3. Repo : **`Reine-chimene/ultimate`**
+4. Netlify lit `netlify.toml` automatiquement
+5. **Environment variables** :
 
 | Key | Value |
 |-----|--------|
-| `NEXT_PUBLIC_API_URL` | `https://ultimate-api-xxxx.onrender.com` |
+| `NEXT_PUBLIC_API_URL` | `https://ultimate-api.fly.dev` |
 
 6. **Deploy site**
-7. URL finale : `https://random-name.netlify.app` (renommable dans Site settings → Domain)
+7. Notez l'URL : `https://random-name.netlify.app`
+8. (Optionnel) Site settings → Domain → renommer en `ultimate-demo.netlify.app`
 
-8. **Retour sur Render** → mettez à jour `CORS_ORIGINS` avec l'URL Netlify exacte → redeploy
+### 3b. Mettre à jour CORS sur Fly.io
+
+```bash
+fly secrets set CORS_ORIGINS="https://votre-url.netlify.app"
+```
 
 ---
 
@@ -98,33 +110,41 @@ Comptes test :
 • demo@ultimate.ca / Demo123!
 • admin@ultimate.ca / Admin123!
 
-⚠️ Premier chargement : ~30 sec (Render free tier se réveille)
+Note : premier chargement ~5-10 sec (Fly.io se réveille)
 ```
 
 ---
 
-## Vercel vs Netlify ?
+## Alternative si Fly.io ne marche pas : Koyeb
 
-| | Netlify | Vercel |
-|---|---------|--------|
-| Next.js | ✅ Excellent | ✅ Excellent (créateurs de Next.js) |
-| Gratuit | ✅ Oui | ✅ Oui |
-| Import GitHub | ✅ 1 clic | ✅ 1 clic |
+1. https://app.koyeb.com → Sign up with GitHub
+2. **Create App** → **GitHub** → repo `Reine-chimene/ultimate`
+3. Paramètres :
+   - **Builder** : Dockerfile
+   - **Dockerfile path** : `backend/Dockerfile`
+   - **Port** : `8000`
+   - **Instance** : Free (Nano)
+4. **Environment variables** : même liste que Fly.io (`DATABASE_URL`, `SECRET_KEY`, `CORS_ORIGINS`, `ENVIRONMENT`)
+5. Deploy → URL : `https://xxx.koyeb.app`
 
-**Les deux conviennent.** Vous avez choisi Netlify — c'est parfait.
-
----
-
-## Limites du free tier
-
-- **Render** : API endormie après 15 min → 30 sec au réveil
-- **Neon** : 512 Mo, projet suspendu après 7 jours d'inactivité (clic pour réactiver)
-- **Netlify** : 100 Go bande passante/mois — largement suffisant pour une démo
+Puis Netlify avec `NEXT_PUBLIC_API_URL` = URL Koyeb.
 
 ---
 
-## Mise à jour du code
+## Comparaison hébergeurs backend
 
-Après chaque `git push` sur `main` :
-- **Netlify** redéploie le frontend automatiquement
-- **Render** redéploie le backend automatiquement
+| | Fly.io | Koyeb | Render |
+|---|--------|-------|--------|
+| Accès | ✅ fly.io | ✅ koyeb.com | ❌ (bloqué chez vous) |
+| Docker | ✅ | ✅ | ✅ |
+| Gratuit | ✅ | ✅ | ✅ |
+| Cold start | ~5-10 sec | ~10 sec | ~30 sec |
+| Région proche | Toronto (yyz) | Europe/US | US |
+
+---
+
+## Mises à jour
+
+Chaque `git push` sur `main` :
+- **Netlify** → redéploie le frontend automatiquement
+- **Fly.io** → `fly deploy` depuis `backend/` (ou CI GitHub Actions)
