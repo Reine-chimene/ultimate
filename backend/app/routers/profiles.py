@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
@@ -18,6 +18,7 @@ from app.schemas.profile import (
     ProfileUpdate,
     PublicProfileResponse,
 )
+from app.services.photo_upload_service import PhotoUploadError, PhotoUploadService
 from app.services.profile_completion import compute_profile_completion
 from app.services.profile_service import ProfileService
 
@@ -86,6 +87,22 @@ async def update_my_preferences(
     try:
         return await service.update_preferences(current_user, data)
     except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.post("/me/photos/upload", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
+async def upload_photo(
+    file: UploadFile = File(...),
+    is_primary: bool = Form(default=False),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    profile_service = ProfileService(db)
+    upload_service = PhotoUploadService(profile_service)
+    content = await file.read()
+    try:
+        return await upload_service.upload(current_user, content, file.content_type, is_primary)
+    except PhotoUploadError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 

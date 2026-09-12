@@ -1,17 +1,21 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.database import engine
 from app.routers import api_router
+from app.services.storage_service import StorageService
 
 settings = get_settings()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    StorageService().ensure_local_directory()
     yield
     await engine.dispose()
 
@@ -44,6 +48,11 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(api_router)
+
+    if settings.storage_backend == "local":
+        media_root = Path(settings.media_storage_path)
+        media_root.mkdir(parents=True, exist_ok=True)
+        app.mount("/media", StaticFiles(directory=str(media_root)), name="media")
 
     @app.get("/health")
     async def health():

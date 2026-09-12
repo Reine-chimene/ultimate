@@ -23,6 +23,15 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
     environment: str = "development"
     cors_origins: str = "http://localhost:3000"
+    media_storage_path: str = Field(default="./uploads", validation_alias="MEDIA_STORAGE_PATH")
+    media_public_url: str = Field(default="http://localhost:8100", validation_alias="MEDIA_PUBLIC_URL")
+    storage_backend: str = Field(default="local", validation_alias="STORAGE_BACKEND")
+    s3_bucket: str | None = Field(default=None, validation_alias="S3_BUCKET")
+    s3_endpoint: str | None = Field(default=None, validation_alias="S3_ENDPOINT")
+    s3_access_key: str | None = Field(default=None, validation_alias="S3_ACCESS_KEY")
+    s3_secret_key: str | None = Field(default=None, validation_alias="S3_SECRET_KEY")
+    s3_region: str = Field(default="auto", validation_alias="S3_REGION")
+    s3_public_base_url: str | None = Field(default=None, validation_alias="S3_PUBLIC_BASE_URL")
 
     @field_validator("database_url", mode="after")
     @classmethod

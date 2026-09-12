@@ -7,6 +7,7 @@ import type {
   Meeting,
   Message,
   Notification,
+  Photo,
   PendingRequests,
   Preferences,
   Profile,
@@ -109,10 +110,34 @@ export const api = {
       }),
     get: (id: string) => request<PublicProfile>(`/profiles/${id}`),
     addPhoto: (url: string, isPrimary = false) =>
-      request("/profiles/me/photos", {
+      request<Photo>("/profiles/me/photos", {
         method: "POST",
         body: JSON.stringify({ url, is_primary: isPrimary }),
       }),
+    uploadPhoto: async (file: File, isPrimary = false): Promise<Photo> => {
+      const token = getToken();
+      const form = new FormData();
+      form.append("file", file);
+      form.append("is_primary", String(isPrimary));
+      const headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(`${API_URL}/api/v1/profiles/me/photos/upload`, {
+        method: "POST",
+        headers,
+        body: form,
+      });
+      if (!res.ok) {
+        let detail = "Impossible d'ajouter cette photo. Vérifiez le format et la taille.";
+        try {
+          const body = await res.json();
+          if (typeof body.detail === "string") detail = body.detail;
+        } catch {
+          /* ignore */
+        }
+        throw new ApiError(res.status, detail);
+      }
+      return res.json();
+    },
     deletePhoto: (id: string) => request(`/profiles/me/photos/${id}`, { method: "DELETE" }),
     addInterest: (name: string) =>
       request("/profiles/me/interests", { method: "POST", body: JSON.stringify({ name }) }),

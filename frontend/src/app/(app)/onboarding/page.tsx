@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Gender, Profile, RelationshipIntention } from "@/types";
@@ -10,7 +9,9 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { INTENTION_LABELS } from "@/lib/constants";
 import { ProfileCompletionBar } from "@/components/profile/ProfileCompletionBar";
+import { PhotoUpload } from "@/components/profile/PhotoUpload";
 import type { ProfileCompletion } from "@/types";
+import { getPrimaryPhoto } from "@/lib/utils";
 
 const STEPS = [
   "Parlez-nous de vous",
@@ -26,7 +27,6 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [completion, setCompletion] = useState<ProfileCompletion | null>(null);
-  const [photoUrl, setPhotoUrl] = useState("");
   const [interestInput, setInterestInput] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -98,30 +98,12 @@ export default function OnboardingPage() {
         )}
 
         {step === 1 && (
-          <>
-            <Input
-              label="URL de votre photo"
-              placeholder="https://..."
-              value={photoUrl}
-              onChange={(e) => setPhotoUrl(e.target.value)}
-            />
-            {profile.photos.length > 0 && (
-              <div className="relative mx-auto aspect-square w-40 overflow-hidden rounded-xl">
-                <Image src={profile.photos[0].url} alt="" fill className="object-cover" />
-              </div>
-            )}
-            <Button
-              variant="outline"
-              disabled={!photoUrl.trim()}
-              onClick={async () => {
-                await api.profiles.addPhoto(photoUrl.trim(), true);
-                setPhotoUrl("");
-                await refresh();
-              }}
-            >
-              Ajouter la photo
-            </Button>
-          </>
+          <PhotoUpload
+            isPrimary
+            label="Ajouter une photo"
+            previewUrl={profile.photos.length > 0 ? getPrimaryPhoto(profile.photos) : null}
+            onProfileRefresh={refresh}
+          />
         )}
 
         {step === 2 && (

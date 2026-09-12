@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Camera, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Profile, RelationshipIntention } from "@/types";
 import { Button } from "@/components/ui/Button";
@@ -12,10 +12,10 @@ import { INTEREST_SUGGESTIONS, INTENTION_LABELS } from "@/lib/constants";
 import { COUNTRIES, defaultTimezoneForCountry } from "@/lib/countries";
 import { getPrimaryPhoto } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { PhotoUpload } from "@/components/profile/PhotoUpload";
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bio, setBio] = useState("");
   const [occupation, setOccupation] = useState("");
@@ -23,7 +23,6 @@ export default function EditProfilePage() {
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("CA");
   const [timezone, setTimezone] = useState("America/Toronto");
-  const [photoUrl, setPhotoUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   const refreshProfile = () => api.profiles.me().then(setProfile);
@@ -57,22 +56,6 @@ export default function EditProfilePage() {
     }
   };
 
-  const handleAddPhoto = async (url: string, isPrimary = false) => {
-    if (!url) return;
-    await api.profiles.addPhoto(url, isPrimary || profile?.photos.length === 0);
-    await refreshProfile();
-    setPhotoUrl("");
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    alert(
-      "Collez l'URL de votre photo ci-dessous (ex. Unsplash, Imgur). Le stockage de fichiers sera disponible dans une prochaine version.",
-    );
-    e.target.value = "";
-  };
-
   const handleDeletePhoto = async (id: string) => {
     await api.profiles.deletePhoto(id);
     await refreshProfile();
@@ -91,24 +74,12 @@ export default function EditProfilePage() {
 
       <section className="premium-card mb-6 p-6">
         <h2 className="mb-4 font-display text-lg font-semibold">Photo de profil</h2>
-        <div className="relative mx-auto mb-4 aspect-square max-w-[200px] overflow-hidden rounded-2xl">
-          <Image
-            src={getPrimaryPhoto(profile.photos)}
-            alt="Photo de profil"
-            fill
-            className="object-cover"
-            sizes="200px"
-          />
-        </div>
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
-        <Button variant="gold" size="sm" className="w-full" onClick={() => fileRef.current?.click()}>
-          <Camera className="h-4 w-4" /> Ajouter une photo
-        </Button>
-        <p className="mt-2 text-center text-xs text-[#9a8f8a]">Ou collez une URL ci-dessous</p>
-        <div className="mt-3 flex gap-2">
-          <Input value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} placeholder="https://..." />
-          <Button variant="outline" onClick={() => handleAddPhoto(photoUrl)}>Ajouter</Button>
-        </div>
+        <PhotoUpload
+          label={profile.photos.length > 0 ? "Changer la photo" : "Ajouter une photo"}
+          previewUrl={getPrimaryPhoto(profile.photos)}
+          isPrimary={profile.photos.length === 0}
+          onProfileRefresh={refreshProfile}
+        />
         {profile.photos.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
             {profile.photos.map((ph) => (

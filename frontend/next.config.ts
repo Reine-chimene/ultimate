@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "i.pravatar.cc" },
       { protocol: "https", hostname: "randomuser.me" },
+      { protocol: "https", hostname: "ultimate-api.fly.dev" },
+      { protocol: "http", hostname: "localhost", port: "8100" },
     ],
   },
 };

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Camera, Edit, MapPin, Settings, SlidersHorizontal } from "lucide-react";
+import { Edit, MapPin, Settings, SlidersHorizontal } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Profile, ProfileCompletion } from "@/types";
@@ -13,19 +13,21 @@ import { INTENTION_LABELS, GENDER_LABELS } from "@/lib/constants";
 import { getCountry } from "@/lib/countries";
 import { calculateAge, getPrimaryPhoto } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { PhotoUpload } from "@/components/profile/PhotoUpload";
 
 export default function MyProfilePage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [completion, setCompletion] = useState<ProfileCompletion | null>(null);
 
+  const refreshProfile = async () => {
+    const [p, c] = await Promise.all([api.profiles.me(), api.profiles.completion()]);
+    setProfile(p);
+    setCompletion(c);
+  };
+
   useEffect(() => {
-    Promise.all([api.profiles.me(), api.profiles.completion()])
-      .then(([p, c]) => {
-        setProfile(p);
-        setCompletion(c);
-      })
-      .catch(() => {});
+    refreshProfile().catch(() => {});
   }, []);
 
   if (!user || !profile) return <LoadingSpinner />;
@@ -71,14 +73,18 @@ export default function MyProfilePage() {
               {country.flag} {user.city}, {country.nameFr}
             </div>
           </div>
-          <Link
-            href="/mon-profil/modifier"
-            className="absolute right-4 top-4 flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-sm backdrop-blur-sm transition hover:bg-black/70"
-          >
-            <Camera className="h-4 w-4" /> Ajouter une photo
-          </Link>
         </div>
       </div>
+
+      <section className="premium-card mt-4 p-6">
+        <PhotoUpload
+          label={profile.photos.length > 0 ? "Changer la photo" : "Ajouter une photo"}
+          previewUrl={getPrimaryPhoto(profile.photos)}
+          isPrimary={profile.photos.length === 0}
+          onUploaded={() => refreshProfile()}
+          onProfileRefresh={refreshProfile}
+        />
+      </section>
 
       <section className="premium-card mt-6 p-6 md:p-8">
         <h3 className="mb-4 font-display text-lg font-semibold text-[#c9a962]">À propos de moi</h3>

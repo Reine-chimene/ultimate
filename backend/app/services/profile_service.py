@@ -186,11 +186,12 @@ class ProfileService:
             for photo in profile.photos:
                 photo.is_primary = False
 
+        sort_order = data.sort_order if data.sort_order else len(profile.photos)
         photo = Photo(
             profile_id=profile.id,
             url=data.url,
-            is_primary=data.is_primary,
-            sort_order=data.sort_order,
+            is_primary=data.is_primary or len(profile.photos) == 0,
+            sort_order=sort_order,
         )
         self.db.add(photo)
         await self.db.commit()
@@ -198,6 +199,8 @@ class ProfileService:
         return PhotoResponse.model_validate(photo)
 
     async def delete_photo(self, user: User, photo_id: UUID) -> None:
+        from app.services.storage_service import StorageService
+
         profile = await self._get_profile_by_user_id(user.id)
         if profile is None:
             raise ValueError("Profil introuvable")
@@ -208,8 +211,24 @@ class ProfileService:
         photo = result.scalar_one_or_none()
         if photo is None:
             raise ValueError("Photo introuvable")
+
+        was_primary = photo.is_primary
+        photo_url = photo.url
         await self.db.delete(photo)
+        await self.db.flush()
+
+        if was_primary:
+            remaining = await self.db.execute(
+                select(Photo)
+                .where(Photo.profile_id == profile.id)
+                .order_by(Photo.sort_order.asc(), Photo.created_at.asc())
+            )
+            first = remaining.scalars().first()
+            if first:
+                first.is_primary = True
+
         await self.db.commit()
+        await StorageService().delete_by_url(photo_url)
 
     async def add_interest(self, user: User, data: InterestCreate) -> InterestResponse:
         profile = await self._get_profile_by_user_id(user.id)
