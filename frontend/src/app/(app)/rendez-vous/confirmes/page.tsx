@@ -5,15 +5,11 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Meeting } from "@/types";
+import { MeetingCard } from "@/components/meetings/MeetingCard";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime } from "@/lib/utils";
-
-const STATUS_LABELS: Record<string, string> = {
-  accepted: "Confirmé",
-  rejected: "Refusé",
-  cancelled: "Annulé",
-  pending: "En attente",
-};
 
 export default function ConfirmedMeetingsPage() {
   const { user } = useAuth();
@@ -25,10 +21,8 @@ export default function ConfirmedMeetingsPage() {
   const accepted = meetings.filter((m) => m.status === "accepted");
   const history = meetings.filter((m) => ["rejected", "cancelled"].includes(m.status));
 
-  const getName = (m: Meeting) => {
-    if (m.requester_id === user?.id) return m.receiver_name;
-    return m.requester_name;
-  };
+  const getName = (m: Meeting) =>
+    m.requester_id === user?.id ? m.receiver_name : m.requester_name;
 
   const handleCancel = async (id: string) => {
     if (!confirm("Annuler ce rendez-vous ?")) return;
@@ -38,53 +32,48 @@ export default function ConfirmedMeetingsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="font-display text-2xl font-semibold">Rendez-vous confirmés</h1>
-        <Link href="/rendez-vous/demandes" className="text-sm text-[#c9a962] hover:underline">
-          ← Demandes
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <PageHeader title="Rendez-vous confirmés" className="mb-0" />
+        <Link href="/rendez-vous/demandes">
+          <Button variant="outline" size="sm">← Demandes</Button>
         </Link>
       </div>
 
-      <section className="mb-8">
-        <h2 className="text-lg font-medium mb-4">À venir ({accepted.length})</h2>
+      <section className="mb-10">
+        <h2 className="mb-4 font-display text-lg font-semibold">
+          À venir <span className="text-emerald-300/90">({accepted.length})</span>
+        </h2>
         {accepted.length === 0 ? (
-          <p className="text-[#9a8f8a] text-sm">Aucun rendez-vous confirmé.</p>
+          <p className="text-sm text-[#9a8f8a]">Aucun rendez-vous confirmé pour le moment.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {accepted.map((m) => (
-              <div key={m.id} className="glass-card p-5">
-                <div className="flex justify-between">
-                  <div>
-                    <h3 className="font-medium">{getName(m)}</h3>
-                    <p className="text-sm text-[#c9a962] mt-1">{formatDateTime(m.proposed_at)}</p>
-                    {m.location && <p className="text-sm text-[#9a8f8a] mt-1">📍 {m.location}</p>}
-                  </div>
-                  <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-300">Confirmé</span>
-                </div>
-                <Button variant="danger" size="sm" className="mt-4" onClick={() => handleCancel(m.id)}>
-                  Annuler le rendez-vous
-                </Button>
-              </div>
+              <MeetingCard
+                key={m.id}
+                meeting={m}
+                name={getName(m)}
+                onCancel={() => handleCancel(m.id)}
+              />
             ))}
           </div>
         )}
       </section>
 
       <section>
-        <h2 className="text-lg font-medium mb-4">Historique ({history.length})</h2>
+        <h2 className="mb-4 font-display text-lg font-semibold">
+          Historique <span className="text-[#9a8f8a]">({history.length})</span>
+        </h2>
         {history.length === 0 ? (
-          <p className="text-[#9a8f8a] text-sm">Aucun historique.</p>
+          <p className="text-sm text-[#9a8f8a]">Aucun historique.</p>
         ) : (
           <div className="space-y-3">
             {history.map((m) => (
-              <div key={m.id} className="glass-card p-5 opacity-70">
-                <div className="flex justify-between">
-                  <div>
-                    <h3 className="font-medium">{getName(m)}</h3>
-                    <p className="text-sm text-[#9a8f8a] mt-1">{formatDateTime(m.proposed_at)}</p>
-                  </div>
-                  <span className="text-xs text-[#9a8f8a]">{STATUS_LABELS[m.status]}</span>
+              <div key={m.id} className="premium-card flex items-center justify-between p-5 opacity-75">
+                <div>
+                  <h3 className="font-medium">{getName(m)}</h3>
+                  <p className="mt-1 text-sm text-[#9a8f8a]">{formatDateTime(m.proposed_at)}</p>
                 </div>
+                <StatusBadge status={m.status} />
               </div>
             ))}
           </div>

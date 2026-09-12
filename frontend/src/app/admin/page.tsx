@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Heart, MessageCircle, Moon, Calendar, Crown, Flag } from "lucide-react";
+import { Users, Heart, MessageCircle, Moon, Calendar, Crown, Flag, Globe2 } from "lucide-react";
 import { api } from "@/lib/api";
 import type { AdminStats } from "@/types";
+import { getCountry } from "@/lib/countries";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -42,6 +43,26 @@ export default function AdminDashboardPage() {
           </div>
         ))}
       </div>
+
+      {stats.users_by_country && stats.users_by_country.length > 0 && (
+        <section className="mt-10">
+          <div className="mb-4 flex items-center gap-2">
+            <Globe2 className="h-5 w-5 text-[#c9a962]" />
+            <h2 className="font-display text-xl font-semibold">Vue internationale</h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {stats.users_by_country.map((c) => (
+              <div key={c.code} className="glass-card flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{getCountry(c.code).flag}</span>
+                  <span className="font-medium">{c.name}</span>
+                </div>
+                <span className="text-lg font-semibold text-[#c9a962]">{c.count}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -5,21 +5,16 @@ echo "En attente de PostgreSQL..."
 
 until python -c "
 import asyncio
-import os
 import sys
-from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
+from app.database import engine
 
 async def check():
-    url = os.environ.get('DATABASE_URL', 'postgresql+asyncpg://ultimate:ultimate@postgres:5432/ultimate')
-    engine = create_async_engine(url)
     try:
         async with engine.connect() as conn:
             await conn.execute(text('SELECT 1'))
-        await engine.dispose()
         return True
     except Exception:
-        await engine.dispose()
         return False
 
 sys.exit(0 if asyncio.run(check()) else 1)

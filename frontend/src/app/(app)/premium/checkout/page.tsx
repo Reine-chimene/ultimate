@@ -2,10 +2,11 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Crown } from "lucide-react";
+import { Crown, CreditCard } from "lucide-react";
 import { api } from "@/lib/api";
 import { PREMIUM_PLANS } from "@/lib/constants";
 import { Button } from "@/components/ui/Button";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 function CheckoutForm() {
   const router = useRouter();
@@ -25,37 +26,52 @@ function CheckoutForm() {
   };
 
   return (
-    <div className="max-w-md mx-auto">
-      <div className="text-center mb-8">
-        <Crown className="mx-auto h-10 w-10 text-[#c9a962]" />
-        <h1 className="mt-4 font-display text-2xl font-semibold">Paiement</h1>
-        <p className="text-sm text-[#9a8f8a]">Simulation de paiement — aucun frais réel</p>
-      </div>
+    <div className="mx-auto max-w-md">
+      <PageHeader
+        eyebrow="Checkout"
+        title="Confirmation"
+        subtitle="Mode démo — aucun paiement réel ne sera effectué."
+        centered
+      />
 
-      <div className="glass-card p-6 space-y-4">
-        <div className="flex justify-between py-3 border-b border-white/5">
-          <span>Plan {plan.label}</span>
-          <span className="font-semibold text-[#c9a962]">{plan.price.toFixed(2)} CAD</span>
-        </div>
-        <div className="flex justify-between py-3 border-b border-white/5">
-          <span>Taxes</span>
-          <span className="text-[#9a8f8a]">Incluses</span>
-        </div>
-        <div className="flex justify-between py-3 font-semibold">
-          <span>Total</span>
-          <span className="text-[#c9a962]">{plan.price.toFixed(2)} CAD</span>
+      <div className="premium-card space-y-5 p-6 md:p-8">
+        <div className="flex items-center justify-center gap-2 text-[#c9a962]">
+          <Crown className="h-6 w-6" />
+          <span className="font-display text-lg font-semibold">Plan {plan.label}</span>
         </div>
 
-        <div className="rounded-xl bg-white/5 p-4 text-sm text-[#9a8f8a]">
-          <p>💳 Mode simulation</p>
-          <p className="mt-1">Le paiement réel sera intégré ultérieurement via un processeur sécurisé.</p>
+        <div className="space-y-3 border-y border-white/[0.06] py-4 text-sm">
+          <div className="flex justify-between">
+            <span className="text-[#9a8f8a]">Abonnement</span>
+            <span className="font-medium">{plan.price.toFixed(2)} $ CAD</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#9a8f8a]">Taxes</span>
+            <span className="text-[#9a8f8a]">Incluses</span>
+          </div>
+          <div className="flex justify-between pt-2 text-base font-semibold">
+            <span>Total</span>
+            <span className="text-[#c9a962]">{plan.price.toFixed(2)} $ CAD</span>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm">
+          <div className="flex items-start gap-2">
+            <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+            <div>
+              <p className="font-medium text-amber-200/90">Paiement simulé</p>
+              <p className="mt-1 text-[#9a8f8a]">
+                Ceci est une démonstration. Aucune carte bancaire n&apos;est requise et aucun montant ne sera débité.
+              </p>
+            </div>
+          </div>
         </div>
 
         <Button variant="gold" className="w-full" loading={loading} onClick={handleCheckout}>
-          Confirmer le paiement
+          Confirmer (simulation)
         </Button>
         <Button variant="ghost" className="w-full" onClick={() => router.back()}>
-          Retour
+          Retour aux plans
         </Button>
       </div>
     </div>
@@ -64,7 +80,7 @@ function CheckoutForm() {
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div className="py-20 text-center">Chargement...</div>}>
+    <Suspense fallback={<div className="py-20 text-center text-[#9a8f8a]">Chargement...</div>}>
       <CheckoutForm />
     </Suspense>
   );

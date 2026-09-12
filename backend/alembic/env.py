@@ -25,6 +25,7 @@ from app.models import (  # noqa: F401
     Profile,
     Report,
     Subscription,
+    TravelPlan,
     User,
 )
 
@@ -62,6 +63,7 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=settings.database_connect_args,
     )
 
     async with connectable.connect() as connection:

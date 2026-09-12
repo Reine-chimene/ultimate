@@ -21,6 +21,8 @@ async def create_meeting(
     service = MeetingService(db)
     try:
         return await service.create_meeting(current_user, data)
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 

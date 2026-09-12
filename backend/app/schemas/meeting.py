@@ -24,3 +24,4 @@ class MeetingResponse(ORMModel, TimestampSchema):
     status: MeetingStatus
     requester_name: str | None = None
     receiver_name: str | None = None
+    proposed_at_display: str | None = None

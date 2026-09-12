@@ -7,7 +7,7 @@ from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.user import User
 from app.schemas.match import MessageCreate, MessageResponse
-from app.services.match_service import MatchService
+from app.services.match_service import MatchService, MessagingNotAllowedError
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
@@ -22,6 +22,8 @@ async def send_message(
     service = MatchService(db)
     try:
         return await service.send_message(current_user, match_id, data)
+    except MessagingNotAllowedError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
@@ -35,6 +37,8 @@ async def mark_read(
     service = MatchService(db)
     try:
         count = await service.mark_messages_read(current_user, match_id)
+    except MessagingNotAllowedError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     return {"marked_read": count}

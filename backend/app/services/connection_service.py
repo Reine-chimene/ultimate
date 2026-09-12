@@ -1,0 +1,379 @@
+from datetime import UTC, date, datetime
+from uuid import UUID
+
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.models.enums import ConnectionRequestStatus, ConnectionState, SubscriptionPlan, SubscriptionStatus
+from app.models.profile import Profile
+from app.models.social import Block, Conversation, Like, Match
+from app.models.subscription import Notification, Subscription
+from app.models.user import User
+from app.schemas.connections import (
+    ConnectionActionResponse,
+    ConnectionRequestCreate,
+    ConnectionStatusResponse,
+    PendingRequestItem,
+    PendingRequestsResponse,
+)
+from app.services.compatibility import is_compatible
+from app.services.profile_service import ProfileService
+
+FREE_DAILY_REQUEST_LIMIT = 5
+PREMIUM_DAILY_REQUEST_LIMIT = 25
+
+
+class ConnectionService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.profile_service = ProfileService(db)
+
+    async def _is_blocked(self, user_a_id: UUID, user_b_id: UUID) -> bool:
+        result = await self.db.execute(
+            select(Block).where(
+                or_(
+                    and_(Block.blocker_id == user_a_id, Block.blocked_id == user_b_id),
+                    and_(Block.blocker_id == user_b_id, Block.blocked_id == user_a_id),
+                )
+            )
+        )
+        return result.scalar_one_or_none() is not None
+
+    async def _has_match(self, user_a_id: UUID, user_b_id: UUID) -> Match | None:
+        result = await self.db.execute(
+            select(Match).where(
+                or_(
+                    and_(Match.user1_id == user_a_id, Match.user2_id == user_b_id),
+                    and_(Match.user1_id == user_b_id, Match.user2_id == user_a_id),
+                )
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def _is_premium(self, user: User) -> bool:
+        result = await self.db.execute(
+            select(Subscription).where(
+                Subscription.user_id == user.id,
+                Subscription.status == SubscriptionStatus.ACTIVE,
+                Subscription.plan.in_([SubscriptionPlan.PREMIUM, SubscriptionPlan.VIP]),
+            )
+        )
+        sub = result.scalars().first()
+        if sub is None:
+            return False
+        if sub.expires_at and sub.expires_at < datetime.now(UTC):
+            return False
+        return True
+
+    async def _daily_limit(self, user: User) -> int:
+        return PREMIUM_DAILY_REQUEST_LIMIT if await self._is_premium(user) else FREE_DAILY_REQUEST_LIMIT
+
+    async def _requests_sent_today(self, user_id: UUID) -> int:
+        today = date.today()
+        result = await self.db.execute(
+            select(func.count())
+            .select_from(Like)
+            .where(
+                Like.sender_id == user_id,
+                Like.is_like.is_(True),
+                func.date(Like.created_at) == today,
+            )
+        )
+        return result.scalar_one()
+
+    async def requests_remaining(self, user: User) -> int:
+        limit = await self._daily_limit(user)
+        sent = await self._requests_sent_today(user.id)
+        return max(0, limit - sent)
+
+    async def get_connection_state(self, current_user: User, other_user_id: UUID) -> ConnectionStatusResponse:
+        if await self._is_blocked(current_user.id, other_user_id):
+            return ConnectionStatusResponse(state=ConnectionState.BLOCKED)
+
+        match = await self._has_match(current_user.id, other_user_id)
+        if match:
+            return ConnectionStatusResponse(state=ConnectionState.CONNECTED, match_id=match.id)
+
+        sent = await self.db.execute(
+            select(Like).where(
+                Like.sender_id == current_user.id,
+                Like.receiver_id == other_user_id,
+            )
+        )
+        sent_like = sent.scalar_one_or_none()
+
+        received = await self.db.execute(
+            select(Like).where(
+                Like.sender_id == other_user_id,
+                Like.receiver_id == current_user.id,
+            )
+        )
+        received_like = received.scalar_one_or_none()
+
+        if received_like and received_like.is_like and received_like.request_status == ConnectionRequestStatus.PENDING:
+            return ConnectionStatusResponse(
+                state=ConnectionState.PENDING_RECEIVED,
+                intro_message=received_like.intro_message,
+                requests_remaining=await self.requests_remaining(current_user),
+            )
+
+        if sent_like:
+            if sent_like.request_status == ConnectionRequestStatus.DECLINED or not sent_like.is_like:
+                return ConnectionStatusResponse(state=ConnectionState.DECLINED)
+            if sent_like.request_status == ConnectionRequestStatus.PENDING:
+                return ConnectionStatusResponse(
+                    state=ConnectionState.PENDING_SENT,
+                    intro_message=sent_like.intro_message,
+                    requests_remaining=await self.requests_remaining(current_user),
+                )
+
+        return ConnectionStatusResponse(
+            state=ConnectionState.NONE,
+            requests_remaining=await self.requests_remaining(current_user),
+        )
+
+    async def _create_connection(self, user1_id: UUID, user2_id: UUID) -> Match:
+        conversation = Conversation()
+        self.db.add(conversation)
+        await self.db.flush()
+
+        ordered = sorted([user1_id, user2_id], key=str)
+        match = Match(
+            user1_id=ordered[0],
+            user2_id=ordered[1],
+            conversation_id=conversation.id,
+            matched_at=datetime.now(UTC),
+        )
+        self.db.add(match)
+
+        user1 = await self.db.get(User, user1_id)
+        user2 = await self.db.get(User, user2_id)
+        for uid, other in [(user1_id, user2), (user2_id, user1)]:
+            notification = Notification(
+                user_id=uid,
+                type="connection",
+                title="Nouvelle connexion",
+                body=f"Vous êtes maintenant connecté·e avec {other.first_name if other else 'quelqu un'}!",
+            )
+            self.db.add(notification)
+
+        await self.db.flush()
+        return match
+
+    async def send_request(self, sender: User, data: ConnectionRequestCreate) -> ConnectionActionResponse:
+        if sender.id == data.receiver_id:
+            raise ValueError("Vous ne pouvez pas vous connecter avec vous-même")
+
+        receiver = await self.db.get(User, data.receiver_id)
+        if receiver is None or not receiver.is_active:
+            raise ValueError("Utilisateur introuvable")
+
+        if await self._is_blocked(sender.id, data.receiver_id):
+            raise ValueError("Interaction impossible avec cet utilisateur")
+
+        if await self._has_match(sender.id, data.receiver_id):
+            raise ValueError("Vous êtes déjà connectés")
+
+        remaining = await self.requests_remaining(sender)
+        if remaining <= 0:
+            raise ValueError(
+                "Vous avez atteint votre limite quotidienne de demandes. Passez à Premium pour en envoyer davantage."
+            )
+
+        existing = await self.db.execute(
+            select(Like).where(
+                Like.sender_id == sender.id,
+                Like.receiver_id == data.receiver_id,
+            )
+        )
+        existing_like = existing.scalar_one_or_none()
+        if existing_like:
+            if (
+                existing_like.is_like
+                and existing_like.request_status == ConnectionRequestStatus.PENDING
+            ):
+                raise ValueError("Une demande existe déjà pour cet utilisateur")
+            if existing_like.request_status == ConnectionRequestStatus.ACCEPTED:
+                raise ValueError("Vous êtes déjà connectés")
+
+        sender_profile = await self.profile_service._get_profile_by_user_id(sender.id)
+        receiver_profile = await self.profile_service._get_profile_by_user_id(data.receiver_id)
+        if sender_profile and receiver_profile:
+            if not is_compatible(sender, sender_profile, receiver, receiver_profile):
+                raise ValueError("Ce profil n'est pas compatible avec vos préférences")
+
+        intro = data.intro_message.strip() if data.intro_message else None
+        if intro and len(intro) > 150:
+            raise ValueError("Le message d'introduction ne peut pas dépasser 150 caractères")
+
+        if existing_like and existing_like.request_status == ConnectionRequestStatus.DECLINED:
+            existing_like.is_like = True
+            existing_like.intro_message = intro
+            existing_like.request_status = ConnectionRequestStatus.PENDING
+            like = existing_like
+        else:
+            like = Like(
+                sender_id=sender.id,
+                receiver_id=data.receiver_id,
+                is_like=True,
+                intro_message=intro,
+                request_status=ConnectionRequestStatus.PENDING,
+            )
+            self.db.add(like)
+
+        notification = Notification(
+            user_id=data.receiver_id,
+            type="connection_request",
+            title="Nouvelle demande de connexion",
+            body=f"{sender.first_name} souhaite se connecter avec vous.",
+        )
+        self.db.add(notification)
+        await self.db.commit()
+
+        return ConnectionActionResponse(
+            state=ConnectionState.PENDING_SENT,
+            requests_remaining=await self.requests_remaining(sender),
+        )
+
+    async def accept_request(self, user: User, sender_id: UUID) -> ConnectionActionResponse:
+        if await self._is_blocked(user.id, sender_id):
+            raise ValueError("Interaction impossible")
+
+        incoming = await self.db.execute(
+            select(Like).where(
+                Like.sender_id == sender_id,
+                Like.receiver_id == user.id,
+                Like.is_like.is_(True),
+                Like.request_status == ConnectionRequestStatus.PENDING,
+            )
+        )
+        like = incoming.scalar_one_or_none()
+        if like is None:
+            raise ValueError("Demande de connexion introuvable")
+
+        if await self._has_match(user.id, sender_id):
+            raise ValueError("Vous êtes déjà connectés")
+
+        like.request_status = ConnectionRequestStatus.ACCEPTED
+        match = await self._create_connection(user.id, sender_id)
+
+        sender = await self.db.get(User, sender_id)
+        notification = Notification(
+            user_id=sender_id,
+            type="connection_accepted",
+            title="Demande acceptée",
+            body=f"{user.first_name} a accepté votre demande de connexion!",
+        )
+        self.db.add(notification)
+        await self.db.commit()
+
+        return ConnectionActionResponse(
+            state=ConnectionState.CONNECTED,
+            match_id=match.id,
+        )
+
+    async def decline_request(self, user: User, sender_id: UUID) -> ConnectionActionResponse:
+        incoming = await self.db.execute(
+            select(Like).where(
+                Like.sender_id == sender_id,
+                Like.receiver_id == user.id,
+                Like.is_like.is_(True),
+                Like.request_status == ConnectionRequestStatus.PENDING,
+            )
+        )
+        like = incoming.scalar_one_or_none()
+        if like is None:
+            raise ValueError("Demande de connexion introuvable")
+
+        like.request_status = ConnectionRequestStatus.DECLINED
+
+        notification = Notification(
+            user_id=sender_id,
+            type="connection_declined",
+            title="Demande déclinée",
+            body=f"{user.first_name} a décliné votre demande de connexion.",
+        )
+        self.db.add(notification)
+        await self.db.commit()
+
+        return ConnectionActionResponse(state=ConnectionState.DECLINED)
+
+    async def get_pending_requests(self, user: User) -> PendingRequestsResponse:
+        my_profile = await self.profile_service._get_profile_by_user_id(user.id)
+        received: list[PendingRequestItem] = []
+        sent: list[PendingRequestItem] = []
+
+        incoming = await self.db.execute(
+            select(Like)
+            .where(
+                Like.receiver_id == user.id,
+                Like.is_like.is_(True),
+                Like.request_status == ConnectionRequestStatus.PENDING,
+            )
+            .order_by(Like.created_at.desc())
+        )
+        for like in incoming.scalars().all():
+            if await self._is_blocked(user.id, like.sender_id):
+                continue
+            row = await self.db.execute(
+                select(User, Profile)
+                .join(Profile, Profile.user_id == User.id)
+                .where(User.id == like.sender_id)
+                .options(selectinload(Profile.photos), selectinload(Profile.interests))
+            )
+            result = row.first()
+            if not result:
+                continue
+            sender_user, sender_profile = result
+            profile = await self.profile_service.to_public_profile(
+                sender_user, sender_profile, user, my_profile, is_connected=False
+            )
+            received.append(
+                PendingRequestItem(
+                    user_id=sender_user.id,
+                    profile=profile,
+                    intro_message=like.intro_message,
+                    created_at=like.created_at,
+                )
+            )
+
+        outgoing = await self.db.execute(
+            select(Like)
+            .where(
+                Like.sender_id == user.id,
+                Like.is_like.is_(True),
+                Like.request_status == ConnectionRequestStatus.PENDING,
+            )
+            .order_by(Like.created_at.desc())
+        )
+        for like in outgoing.scalars().all():
+            if await self._has_match(user.id, like.receiver_id):
+                continue
+            row = await self.db.execute(
+                select(User, Profile)
+                .join(Profile, Profile.user_id == User.id)
+                .where(User.id == like.receiver_id)
+                .options(selectinload(Profile.photos), selectinload(Profile.interests))
+            )
+            result = row.first()
+            if not result:
+                continue
+            receiver_user, receiver_profile = result
+            profile = await self.profile_service.to_public_profile(
+                receiver_user, receiver_profile, user, my_profile, is_connected=False
+            )
+            sent.append(
+                PendingRequestItem(
+                    user_id=receiver_user.id,
+                    profile=profile,
+                    intro_message=like.intro_message,
+                    created_at=like.created_at,
+                )
+            )
+
+        return PendingRequestsResponse(
+            received=received,
+            sent=sent,
+            requests_remaining=await self.requests_remaining(user),
+        )

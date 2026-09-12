@@ -15,6 +15,14 @@ class RelationshipIntention(str, enum.Enum):
     CASUAL = "casual"
     FRIENDSHIP = "friendship"
     UNSURE = "unsure"
+    TONIGHT = "tonight"
+    TRAVEL = "travel"
+
+
+class DiscoveryMode(str, enum.Enum):
+    NEAR_ME = "near_me"
+    INTERNATIONAL = "international"
+    TRAVEL = "travel"
 
 
 class MeetingStatus(str, enum.Enum):
@@ -52,6 +60,21 @@ class PaymentStatus(str, enum.Enum):
     SIMULATED = "simulated"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+class ConnectionRequestStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+
+
+class ConnectionState(str, enum.Enum):
+    NONE = "none"
+    PENDING_SENT = "pending_sent"
+    PENDING_RECEIVED = "pending_received"
+    CONNECTED = "connected"
+    DECLINED = "declined"
+    BLOCKED = "blocked"
 
 
 def pg_enum(enum_class: type[enum.Enum], name: str, *, create_type: bool = True) -> SAEnum:

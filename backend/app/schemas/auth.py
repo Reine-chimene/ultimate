@@ -14,6 +14,8 @@ class RegisterRequest(BaseModel):
     date_of_birth: date
     gender: Gender
     city: str = Field(min_length=2, max_length=100)
+    country: str = Field(default="CA", min_length=2, max_length=2)
+    timezone: str | None = Field(default=None, max_length=64)
     terms_accepted: bool
     is_adult: bool
 
@@ -52,6 +54,10 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
 class UserResponse(ORMModel):
     id: UUID
     email: EmailStr
@@ -59,7 +65,10 @@ class UserResponse(ORMModel):
     date_of_birth: date
     gender: Gender
     city: str
+    country: str
+    timezone: str
     role: UserRole
     is_active: bool
+    onboarding_completed: bool = False
     terms_accepted_at: datetime
     created_at: datetime

@@ -4,12 +4,13 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.countries import get_country
 from app.models.enums import ReportStatus, SubscriptionStatus, UserRole
 from app.models.meeting import Availability, Meeting
 from app.models.social import Match, Message, Report
 from app.models.subscription import Subscription
 from app.models.user import User
-from app.schemas.admin import AdminStatsResponse, AdminUserUpdate, AdminUsersResponse
+from app.schemas.admin import AdminStatsResponse, AdminUserUpdate, AdminUsersResponse, CountryUserCount
 from app.schemas.auth import UserResponse
 from app.schemas.report import ReportResponse
 
@@ -56,6 +57,21 @@ class AdminService:
             await self.db.execute(select(func.count()).select_from(Meeting))
         ).scalar_one()
 
+        country_rows = await self.db.execute(
+            select(User.country, func.count())
+            .where(User.is_active.is_(True))
+            .group_by(User.country)
+            .order_by(func.count().desc())
+        )
+        users_by_country = [
+            CountryUserCount(
+                code=row[0].upper(),
+                name=get_country(row[0]).name_fr,
+                count=row[1],
+            )
+            for row in country_rows.all()
+        ]
+
         return AdminStatsResponse(
             total_users=total_users,
             active_users=active_users,
@@ -66,6 +82,7 @@ class AdminService:
             total_meetings=total_meetings,
             pending_reports=pending_reports,
             active_subscriptions=active_subscriptions,
+            users_by_country=users_by_country,
         )
 
     async def list_users(self, skip: int = 0, limit: int = 50) -> AdminUsersResponse:

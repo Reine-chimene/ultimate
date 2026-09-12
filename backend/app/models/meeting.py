@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, time
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Text
+from sqlalchemy import Date, DateTime, ForeignKey, String, Text, Time
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,6 +21,8 @@ class Availability(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     available_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     is_available: Mapped[bool] = mapped_column(default=True, nullable=False)
     note: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    start_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    end_time: Mapped[time | None] = mapped_column(Time, nullable=True)
 
     user: Mapped["User"] = relationship("User", back_populates="availability_slots")
 

@@ -1,21 +1,36 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.profile import Profile
-from app.models.social import Conversation, Match, Message
+from app.models.social import Block, Conversation, Match, Message
 from app.models.user import User
 from app.schemas.match import ConversationResponse, MatchResponse, MessageCreate, MessageResponse
 from app.services.profile_service import ProfileService
+
+
+class MessagingNotAllowedError(PermissionError):
+    pass
 
 
 class MatchService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.profile_service = ProfileService(db)
+
+    async def _is_blocked(self, user_a_id: UUID, user_b_id: UUID) -> bool:
+        result = await self.db.execute(
+            select(Block).where(
+                or_(
+                    and_(Block.blocker_id == user_a_id, Block.blocked_id == user_b_id),
+                    and_(Block.blocker_id == user_b_id, Block.blocked_id == user_a_id),
+                )
+            )
+        )
+        return result.scalar_one_or_none() is not None
 
     async def _get_match_for_user(self, match_id: UUID, user_id: UUID) -> Match:
         result = await self.db.execute(
@@ -26,8 +41,13 @@ class MatchService:
         )
         match = result.scalar_one_or_none()
         if match is None:
-            raise ValueError("Match introuvable")
+            raise ValueError("Connexion introuvable")
         return match
+
+    async def _validate_messaging(self, match: Match, user: User) -> None:
+        other_id = match.user2_id if match.user1_id == user.id else match.user1_id
+        if await self._is_blocked(user.id, other_id):
+            raise MessagingNotAllowedError("Messagerie indisponible avec cet utilisateur")
 
     async def list_matches(self, user: User) -> list[MatchResponse]:
         result = await self.db.execute(
@@ -52,7 +72,7 @@ class MatchService:
             if row:
                 other_u, other_p = row
                 other_user = await self.profile_service.to_public_profile(
-                    other_u, other_p, user, my_profile
+                    other_u, other_p, user, my_profile, is_connected=True
                 )
 
             response = MatchResponse.model_validate(match)
@@ -62,6 +82,7 @@ class MatchService:
 
     async def get_conversation(self, user: User, match_id: UUID) -> ConversationResponse:
         match = await self._get_match_for_user(match_id, user.id)
+        await self._validate_messaging(match, user)
         result = await self.db.execute(
             select(Conversation)
             .where(Conversation.id == match.conversation_id)
@@ -79,6 +100,7 @@ class MatchService:
         self, user: User, match_id: UUID, data: MessageCreate
     ) -> MessageResponse:
         match = await self._get_match_for_user(match_id, user.id)
+        await self._validate_messaging(match, user)
         message = Message(
             conversation_id=match.conversation_id,
             sender_id=user.id,
@@ -91,6 +113,7 @@ class MatchService:
 
     async def mark_messages_read(self, user: User, match_id: UUID) -> int:
         match = await self._get_match_for_user(match_id, user.id)
+        await self._validate_messaging(match, user)
         result = await self.db.execute(
             select(Message).where(
                 Message.conversation_id == match.conversation_id,
@@ -104,3 +127,14 @@ class MatchService:
             msg.read_at = now
         await self.db.commit()
         return len(messages)
+
+    async def users_are_connected(self, user_a_id: UUID, user_b_id: UUID) -> bool:
+        result = await self.db.execute(
+            select(Match).where(
+                or_(
+                    and_(Match.user1_id == user_a_id, Match.user2_id == user_b_id),
+                    and_(Match.user1_id == user_b_id, Match.user2_id == user_a_id),
+                )
+            )
+        )
+        return result.scalar_one_or_none() is not None

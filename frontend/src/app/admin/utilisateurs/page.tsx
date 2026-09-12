@@ -6,6 +6,7 @@ import type { User } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { formatDate } from "@/lib/utils";
+import { getCountry } from "@/lib/countries";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -37,7 +38,9 @@ export default function AdminUsersPage() {
           <div key={u.id} className="glass-card flex items-center justify-between p-4">
             <div>
               <p className="font-medium">{u.first_name} <span className="text-[#9a8f8a] text-sm">({u.email})</span></p>
-              <p className="text-xs text-[#9a8f8a]">{u.city} · {u.role} · Inscrit le {formatDate(u.created_at)}</p>
+              <p className="text-xs text-[#9a8f8a]">
+                {getCountry(u.country).flag} {u.city}, {getCountry(u.country).nameFr} · {u.timezone} · {u.role} · Inscrit le {formatDate(u.created_at)}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <span className={`text-xs px-2 py-0.5 rounded-full ${u.is_active ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}`}>

@@ -17,7 +17,10 @@ async def set_availability(
     db: AsyncSession = Depends(get_db),
 ):
     service = AvailabilityService(db)
-    return await service.set_availability(current_user, data)
+    try:
+        return await service.set_availability(current_user, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 @router.get("/me", response_model=list[AvailabilityResponse])

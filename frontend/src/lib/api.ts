@@ -7,14 +7,20 @@ import type {
   Meeting,
   Message,
   Notification,
+  PendingRequests,
+  Preferences,
   Profile,
   PublicProfile,
   Report,
   Subscription,
+  TravelMeResponse,
+  TravelPlan,
   User,
+  WorldResponse,
 } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Vide en prod Netlify → requêtes relatives proxifiées vers Fly.io
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8100";
 
 class ApiError extends Error {
   constructor(
@@ -44,9 +50,24 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     let detail = "Une erreur est survenue";
     try {
       const body = await res.json();
-      detail = typeof body.detail === "string" ? body.detail : detail;
+      if (typeof body.detail === "string") {
+        detail = body.detail;
+      } else if (Array.isArray(body.detail)) {
+        detail = body.detail.map((e: { msg?: string }) => e.msg).filter(Boolean).join(". ") || detail;
+      }
     } catch {
       /* ignore */
+    }
+    if (detail === "Une erreur est survenue") {
+      const defaults: Record<number, string> = {
+        401: "Session expirée ou identifiants invalides.",
+        403: "Vous n'avez pas l'autorisation pour cette action.",
+        404: "Ressource introuvable.",
+        409: "Une demande de connexion existe déjà.",
+        422: "Vérifiez les informations saisies.",
+        500: "Une erreur est survenue. Veuillez réessayer.",
+      };
+      detail = defaults[res.status] ?? detail;
     }
     throw new ApiError(res.status, detail);
   }
@@ -68,11 +89,24 @@ export const api = {
         body: JSON.stringify({ email, password }),
       }),
     me: () => request<User>("/auth/me"),
+    completeOnboarding: () =>
+      request<User>("/auth/onboarding/complete", { method: "POST" }),
+    refresh: (refreshToken: string) =>
+      request<AuthTokens>("/auth/refresh", {
+        method: "POST",
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      }),
   },
   profiles: {
     me: () => request<Profile>("/profiles/me"),
-    update: (data: Partial<Profile>) =>
+    update: (data: Record<string, unknown>) =>
       request<Profile>("/profiles/me", { method: "PATCH", body: JSON.stringify(data) }),
+    preferences: () => request<Preferences>("/profiles/me/preferences"),
+    updatePreferences: (data: Partial<Preferences>) =>
+      request<Preferences>("/profiles/me/preferences", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
     get: (id: string) => request<PublicProfile>(`/profiles/${id}`),
     addPhoto: (url: string, isPrimary = false) =>
       request("/profiles/me/photos", {
@@ -84,6 +118,10 @@ export const api = {
       request("/profiles/me/interests", { method: "POST", body: JSON.stringify({ name }) }),
     deleteInterest: (id: string) =>
       request(`/profiles/me/interests/${id}`, { method: "DELETE" }),
+    completion: () =>
+      request<{ percent: number; is_complete: boolean; missing: string[]; items: { key: string; label: string; done: boolean }[] }>(
+        "/profiles/me/completion",
+      ),
   },
   discovery: {
     list: (params?: Record<string, string | number | boolean>) => {
@@ -93,13 +131,39 @@ export const api = {
       return request<{ profiles: PublicProfile[]; total: number }>(`/discovery${qs}`);
     },
   },
+  connections: {
+    request: (receiverId: string, introMessage?: string) =>
+      request<{ state: string; match_id: string | null; requests_remaining: number | null }>(
+        "/connections/request",
+        {
+          method: "POST",
+          body: JSON.stringify({ receiver_id: receiverId, intro_message: introMessage || null }),
+        },
+      ),
+    accept: (userId: string) =>
+      request<{ state: string; match_id: string | null }>(`/connections/${userId}/accept`, {
+        method: "POST",
+      }),
+    decline: (userId: string) =>
+      request<{ state: string }>(`/connections/${userId}/decline`, { method: "POST" }),
+    status: (userId: string) =>
+      request<{ state: string; match_id: string | null; intro_message: string | null; requests_remaining: number | null }>(
+        `/connections/status/${userId}`,
+      ),
+    pending: () => request<PendingRequests>("/connections/pending"),
+  },
   likes: {
-    action: (receiverId: string, isLike: boolean) =>
+    action: (receiverId: string, isLike: boolean, introMessage?: string) =>
       request<{ is_like: boolean; is_match: boolean; match_id: string | null }>("/likes", {
         method: "POST",
-        body: JSON.stringify({ receiver_id: receiverId, is_like: isLike }),
+        body: JSON.stringify({
+          receiver_id: receiverId,
+          is_like: isLike,
+          intro_message: introMessage || null,
+        }),
       }),
     received: () => request<{ sender_ids: string[]; count: number }>("/likes/received"),
+    pending: () => request<PendingRequests>("/connections/pending"),
   },
   matches: {
     list: () => request<Match[]>("/matches"),
@@ -116,8 +180,12 @@ export const api = {
       request(`/messages/${matchId}/read`, { method: "POST" }),
   },
   availability: {
-    set: (data: { is_available: boolean; note?: string }) =>
-      request<Availability>("/availability", { method: "POST", body: JSON.stringify(data) }),
+    set: (data: {
+      is_available: boolean;
+      note?: string;
+      start_time?: string;
+      end_time?: string;
+    }) => request<Availability>("/availability", { method: "POST", body: JSON.stringify(data) }),
     me: () => request<Availability[]>("/availability/me"),
     tonight: () =>
       request<{ date: string; users: PublicProfile[] }>("/availability/tonight"),
@@ -162,6 +230,21 @@ export const api = {
     unblock: (blockedId: string) =>
       request(`/reports/block/${blockedId}`, { method: "DELETE" }),
     blocks: () => request<{ id: string; blocked_id: string }[]>("/reports/blocks"),
+  },
+  world: {
+    overview: () => request<WorldResponse>("/world"),
+  },
+  travel: {
+    me: () => request<TravelMeResponse>("/travel/me"),
+    create: (data: {
+      country: string;
+      city: string;
+      arrival_date: string;
+      departure_date: string;
+      wants_to_meet?: boolean;
+    }) =>
+      request<TravelPlan>("/travel", { method: "POST", body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/travel/${id}`, { method: "DELETE" }),
   },
   admin: {
     stats: () => request<AdminStats>("/admin/stats"),

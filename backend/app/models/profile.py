@@ -29,6 +29,14 @@ class Profile(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     min_age: Mapped[int] = mapped_column(Integer, default=18, nullable=False)
     max_age: Mapped[int] = mapped_column(Integer, default=99, nullable=False)
     max_distance_km: Mapped[int] = mapped_column(Integer, default=50, nullable=False)
+    preferred_intentions: Mapped[list[RelationshipIntention]] = mapped_column(
+        ARRAY(pg_enum(RelationshipIntention, "relationship_intention", create_type=False)),
+        nullable=False,
+        default=list,
+    )
+    preferred_countries: Mapped[list[str]] = mapped_column(
+        ARRAY(String(2)), nullable=False, default=list
+    )
     occupation: Mapped[str | None] = mapped_column(String(150), nullable=True)
 
     user: Mapped["User"] = relationship("User", back_populates="profile")

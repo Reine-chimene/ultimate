@@ -6,18 +6,37 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.user import User
+from app.schemas.connections import ProfileCompletionResponse
 from app.schemas.profile import (
     InterestCreate,
     InterestResponse,
     PhotoCreate,
     PhotoResponse,
+    PreferencesResponse,
+    PreferencesUpdate,
     ProfileResponse,
     ProfileUpdate,
     PublicProfileResponse,
 )
+from app.services.profile_completion import compute_profile_completion
 from app.services.profile_service import ProfileService
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
+
+
+@router.get("/me/completion", response_model=ProfileCompletionResponse)
+async def get_profile_completion(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ProfileService(db)
+    try:
+        profile = await service._get_profile_by_user_id(current_user.id)
+        if profile is None:
+            raise ValueError("Profil introuvable")
+        return compute_profile_completion(current_user, profile)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @router.get("/me", response_model=ProfileResponse)
@@ -41,6 +60,31 @@ async def update_my_profile(
     service = ProfileService(db)
     try:
         return await service.update_profile(current_user, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.get("/me/preferences", response_model=PreferencesResponse)
+async def get_my_preferences(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ProfileService(db)
+    try:
+        return await service.get_preferences(current_user)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.patch("/me/preferences", response_model=PreferencesResponse)
+async def update_my_preferences(
+    data: PreferencesUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ProfileService(db)
+    try:
+        return await service.update_preferences(current_user, data)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 

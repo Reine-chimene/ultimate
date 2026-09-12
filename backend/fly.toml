@@ -1,5 +1,7 @@
-# Fly.io — backend ULTIMATE
-# Déploiement : cd backend && fly launch (voir DEPLOY.md)
+# fly.toml app configuration file generated for ultimate-api on 2026-09-10T03:58:50+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = 'ultimate-api'
 primary_region = 'yyz'
@@ -20,12 +22,12 @@ primary_region = 'yyz'
 
   [[http_service.checks]]
     interval = '30s'
-    timeout = '5s'
-    grace_period = '60s'
+    timeout = '10s'
+    grace_period = '5m0s'
     method = 'GET'
     path = '/health'
 
 [[vm]]
   memory = '512mb'
-  cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 512

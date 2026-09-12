@@ -4,6 +4,7 @@ from app.routers import (
     admin,
     auth,
     availability,
+    connections,
     discovery,
     likes,
     matches,
@@ -13,12 +14,15 @@ from app.routers import (
     profiles,
     reports,
     subscriptions,
+    travel,
+    world,
 )
 
 api_router = APIRouter(prefix="/api/v1")
 
 api_router.include_router(auth.router)
 api_router.include_router(profiles.router)
+api_router.include_router(connections.router)
 api_router.include_router(discovery.router)
 api_router.include_router(likes.router)
 api_router.include_router(matches.router)
@@ -29,3 +33,5 @@ api_router.include_router(subscriptions.router)
 api_router.include_router(notifications.router)
 api_router.include_router(reports.router)
 api_router.include_router(admin.router)
+api_router.include_router(world.router)
+api_router.include_router(travel.router)

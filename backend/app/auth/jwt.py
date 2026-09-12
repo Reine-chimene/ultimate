@@ -27,6 +27,19 @@ def decode_token(token: str) -> dict[str, Any]:
     return jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
 
 
+def verify_refresh_token(token: str) -> UUID:
+    try:
+        payload = decode_token(token)
+        if payload.get("type") != "refresh":
+            raise JWTError("Type de jeton invalide")
+        user_id = payload.get("sub")
+        if not user_id:
+            raise JWTError("Jeton invalide")
+        return UUID(user_id)
+    except (JWTError, ValueError) as exc:
+        raise JWTError("Jeton invalide ou expiré") from exc
+
+
 def verify_access_token(token: str) -> UUID:
     try:
         payload = decode_token(token)

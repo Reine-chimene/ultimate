@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, String, func
+from sqlalchemy import Boolean, Date, DateTime, Float, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,10 +21,15 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
     gender: Mapped[Gender] = mapped_column(pg_enum(Gender, "gender"), nullable=False)
     city: Mapped[str] = mapped_column(String(100), nullable=False)
+    country: Mapped[str] = mapped_column(String(2), nullable=False, default="CA", index=True)
+    timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="America/Toronto")
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     role: Mapped[UserRole] = mapped_column(
         pg_enum(UserRole, "user_role"), default=UserRole.USER, nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     terms_accepted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -46,4 +51,7 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     availability_slots: Mapped[list["Availability"]] = relationship(
         "Availability", back_populates="user", cascade="all, delete-orphan"
+    )
+    travel_plans: Mapped[list["TravelPlan"]] = relationship(
+        "TravelPlan", back_populates="user", cascade="all, delete-orphan"
     )

@@ -7,6 +7,12 @@ from app.schemas.auth import UserResponse
 from app.schemas.report import ReportResponse
 
 
+class CountryUserCount(BaseModel):
+    code: str
+    name: str
+    count: int
+
+
 class AdminStatsResponse(BaseModel):
     total_users: int
     active_users: int
@@ -17,6 +23,7 @@ class AdminStatsResponse(BaseModel):
     total_meetings: int
     pending_reports: int
     active_subscriptions: int
+    users_by_country: list[CountryUserCount] = []
 
 
 class AdminUserUpdate(BaseModel):

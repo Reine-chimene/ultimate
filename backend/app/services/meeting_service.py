@@ -8,6 +8,8 @@ from app.models.meeting import Meeting
 from app.models.subscription import Notification
 from app.models.user import User
 from app.schemas.meeting import MeetingCreate, MeetingResponse
+from app.services.match_service import MatchService
+from app.timezone_utils import format_meeting_time
 
 
 class MeetingService:
@@ -20,6 +22,10 @@ class MeetingService:
         response = MeetingResponse.model_validate(meeting)
         response.requester_name = requester.first_name if requester else None
         response.receiver_name = receiver.first_name if receiver else None
+        if requester:
+            response.proposed_at_display = format_meeting_time(
+                meeting.proposed_at, requester.timezone, requester.city
+            )
         return response
 
     async def create_meeting(self, requester: User, data: MeetingCreate) -> MeetingResponse:
@@ -29,6 +35,12 @@ class MeetingService:
         receiver = await self.db.get(User, data.receiver_id)
         if receiver is None or not receiver.is_active:
             raise ValueError("Utilisateur introuvable")
+
+        match_service = MatchService(self.db)
+        if not await match_service.users_are_connected(requester.id, data.receiver_id):
+            raise PermissionError(
+                "Vous devez être connectés pour proposer un rendez-vous"
+            )
 
         meeting = Meeting(
             requester_id=requester.id,

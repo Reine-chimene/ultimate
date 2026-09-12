@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/Input";
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="glass-card w-full max-w-md p-8 animate-slide-up">
+    <div className="flex min-h-screen items-center justify-center px-4 py-8">
+      <div className="premium-card w-full max-w-md p-8 animate-slide-up md:p-10">
         <div className="text-center">
           <Logo />
           <h1 className="mt-6 font-display text-2xl font-semibold">Mot de passe oublié</h1>
@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
         <p className="mt-6 text-center text-sm text-[#9a8f8a]">
           <Link href="/connexion" className="text-[#c9a962] hover:underline">Retour à la connexion</Link>
         </p>
-        <p className="mt-4 text-center text-xs text-[#9a8f8a]/60">
+        <p className="mt-4 rounded-lg bg-white/[0.03] px-3 py-2 text-center text-xs text-[#9a8f8a]/70">
           Fonctionnalité simulée pour le MVP — aucun courriel ne sera envoyé.
         </p>
       </div>

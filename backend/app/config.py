@@ -1,4 +1,5 @@
 from functools import lru_cache
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,8 +28,26 @@ class Settings(BaseSettings):
     @classmethod
     def normalize_database_url(cls, value: str) -> str:
         if value.startswith("postgresql://"):
-            return value.replace("postgresql://", "postgresql+asyncpg://", 1)
-        return value
+            value = value.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+        parsed = urlparse(value)
+        if not parsed.query:
+            return value
+
+        params = parse_qs(parsed.query, keep_blank_values=True)
+        params.pop("sslmode", None)
+        if not params:
+            return urlunparse(parsed._replace(query=""))
+
+        flattened = {key: values[-1] for key, values in params.items()}
+        return urlunparse(parsed._replace(query=urlencode(flattened)))
+
+    @property
+    def database_connect_args(self) -> dict:
+        host = urlparse(self.database_url).hostname or ""
+        if host.endswith(".neon.tech"):
+            return {"ssl": True}
+        return {}
 
     @property
     def cors_origin_list(self) -> list[str]:

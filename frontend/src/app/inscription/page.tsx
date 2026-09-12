@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
+import { TAGLINE } from "@/lib/constants";
+import { COUNTRIES, defaultTimezoneForCountry } from "@/lib/countries";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -19,6 +21,8 @@ export default function RegisterPage() {
     date_of_birth: "",
     gender: "female",
     city: "",
+    country: "CA",
+    timezone: "America/Toronto",
     terms_accepted: false,
     is_adult: false,
   });
@@ -32,6 +36,17 @@ export default function RegisterPage() {
       setError("Vous devez accepter les conditions et confirmer avoir 18 ans ou plus");
       return;
     }
+    if (form.date_of_birth) {
+      const dob = new Date(form.date_of_birth);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const md = today.getMonth() - dob.getMonth();
+      if (md < 0 || (md === 0 && today.getDate() < dob.getDate())) age -= 1;
+      if (age < 18) {
+        setError("Vous devez avoir au moins 18 ans pour vous inscrire");
+        return;
+      }
+    }
     setLoading(true);
     try {
       await register({
@@ -40,7 +55,7 @@ export default function RegisterPage() {
         terms_accepted: true,
         is_adult: true,
       });
-      router.push("/decouvrir");
+      router.push("/onboarding");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erreur lors de l'inscription");
     } finally {
@@ -50,10 +65,11 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-8">
-      <div className="glass-card w-full max-w-lg p-8 animate-slide-up">
+      <div className="premium-card w-full max-w-lg p-8 animate-slide-up md:p-10">
         <div className="text-center">
           <Logo showTagline />
-          <h1 className="mt-6 font-display text-2xl font-semibold">Créer un compte</h1>
+          <p className="section-label mt-6">{TAGLINE}</p>
+          <h1 className="mt-2 font-display text-2xl font-semibold">Créer un compte</h1>
           <p className="mt-1 text-sm text-[#9a8f8a]">Réservé aux personnes de 18 ans et plus</p>
         </div>
 
@@ -68,25 +84,37 @@ export default function RegisterPage() {
             <option value="non_binary">Non-binaire</option>
             <option value="other">Autre</option>
           </Select>
-          <Input label="Ville" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required placeholder="Montréal" />
+          <Select
+            label="Pays"
+            value={form.country}
+            onChange={(e) => {
+              const country = e.target.value;
+              setForm({ ...form, country, timezone: defaultTimezoneForCountry(country) });
+            }}
+          >
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.flag} {c.nameFr}</option>
+            ))}
+          </Select>
+          <Input label="Ville" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required placeholder="Montréal, Paris, New York..." />
 
           <label className="flex items-start gap-3 text-sm">
-            <input type="checkbox" checked={form.is_adult} onChange={(e) => setForm({ ...form, is_adult: e.target.checked })} className="mt-1" />
+            <input type="checkbox" checked={form.is_adult} onChange={(e) => setForm({ ...form, is_adult: e.target.checked })} className="mt-1 accent-[#c9a962]" />
             <span>Je confirme avoir 18 ans ou plus</span>
           </label>
           <label className="flex items-start gap-3 text-sm">
-            <input type="checkbox" checked={form.terms_accepted} onChange={(e) => setForm({ ...form, terms_accepted: e.target.checked })} className="mt-1" />
+            <input type="checkbox" checked={form.terms_accepted} onChange={(e) => setForm({ ...form, terms_accepted: e.target.checked })} className="mt-1 accent-[#c9a962]" />
             <span>
               J&apos;accepte les{" "}
-              <Link href="/conditions" className="text-[#c9a962] hover:underline">conditions d&apos;utilisation</Link>
+              <Link href="/conditions" className="text-[#c9a962] hover:underline">conditions</Link>
               {" "}et la{" "}
-              <Link href="/confidentialite" className="text-[#c9a962] hover:underline">politique de confidentialité</Link>
+              <Link href="/confidentialite" className="text-[#c9a962] hover:underline">confidentialité</Link>
             </span>
           </label>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p>}
           <Button type="submit" variant="gold" className="w-full" loading={loading}>
-            Créer mon compte
+            Créer mon profil
           </Button>
         </form>
 

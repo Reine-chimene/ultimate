@@ -3,13 +3,13 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
-from app.models.enums import ReportStatus, pg_enum
+from app.models.enums import ConnectionRequestStatus, ReportStatus, pg_enum
 
 
 class Like(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -23,6 +23,11 @@ class Like(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     is_like: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    intro_message: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    request_status: Mapped[ConnectionRequestStatus | None] = mapped_column(
+        pg_enum(ConnectionRequestStatus, "connection_request_status", create_type=False),
+        nullable=True,
+    )
 
     sender: Mapped["User"] = relationship("User", foreign_keys=[sender_id], back_populates="sent_likes")
     receiver: Mapped["User"] = relationship(
@@ -32,9 +37,7 @@ class Like(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
 class Match(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "matches"
-    __table_args__ = (
-        UniqueConstraint("user1_id", "user2_id", name="uq_match_pair"),
-    )
+    __table_args__ = (UniqueConstraint("user1_id", "user2_id", name="uq_match_pair"),)
 
     user1_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
