@@ -55,7 +55,7 @@ export default function LandingPage() {
           <Logo size="lg" />
           <p className="section-label mt-8">{TAGLINE}</p>
           <h1 className="mt-4 max-w-3xl font-display text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-6xl">
-            La plateforme sociale de rencontre dédiée à votre plaisir
+            Là où vos fantasmes deviennent des rencontres
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#f5f0e8]/90 md:text-xl">
             {TAGLINE_SECONDARY}

@@ -102,6 +102,9 @@ class AvailabilityService:
             .options(selectinload(Profile.photos), selectinload(Profile.interests))
         )
         rows = result.all()
+        total_available = len(rows)
+        in_your_country = sum(1 for user, _, _ in rows if user.country == current_user.country)
+
         my_profile = await self.profile_service._get_profile_by_user_id(current_user.id)
         passed_ids = await PassService(self.db).get_passed_ids(current_user.id)
 
@@ -133,4 +136,10 @@ class AvailabilityService:
                 )
             )
 
-        return TonightAvailabilityResponse(date=tonight, users=users)
+        return TonightAvailabilityResponse(
+            date=tonight,
+            total_available=total_available,
+            compatible_available=len(users),
+            in_your_country=in_your_country,
+            users=users,
+        )

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Edit, Eye, Heart, Lock, MapPin, Newspaper, Settings, SlidersHorizontal, Users } from "lucide-react";
+import { Edit, Eye, Heart, Lock, MapPin, Newspaper, Settings, SlidersHorizontal, Users, Video } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Profile, ProfileCompletion } from "@/types";
@@ -93,6 +93,13 @@ export default function MyProfilePage() {
           <div>
             <p className="font-medium">Fil communautaire</p>
             <p className="text-sm text-[#9a8f8a]">Publications, likes et commentaires</p>
+          </div>
+        </Link>
+        <Link href="/live" className="premium-card flex items-center gap-3 p-4 transition hover:bg-white/[0.03]">
+          <Video className="h-5 w-5 text-[#c9a962]" />
+          <div>
+            <p className="font-medium">Ultimate Live</p>
+            <p className="text-sm text-[#9a8f8a]">Salons en direct · Phase 3</p>
           </div>
         </Link>
         <Link href="/mon-profil/modifier" className="premium-card flex items-center gap-3 p-4 transition hover:bg-white/[0.03]">

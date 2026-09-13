@@ -18,6 +18,7 @@ import {
   Settings,
   Shield,
   User,
+  Video,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/ui/Logo";
@@ -32,6 +33,7 @@ const mainNavItems = [
 ];
 
 const desktopExtraNav = [
+  { href: "/live", label: "Live", icon: Video, match: (p: string) => p.startsWith("/live") },
   { href: "/recherche", label: "Recherche", icon: Search, match: (p: string) => p.startsWith("/recherche") },
   { href: "/matchs", label: "Matchs", icon: Heart, match: (p: string) => p.startsWith("/matchs") },
   { href: "/world", label: "Ultimate World", icon: Globe2, match: (p: string) => p.startsWith("/world") },

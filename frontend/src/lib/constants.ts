@@ -2,8 +2,8 @@ import type { DiscoveryMode, Gender, RelationshipIntention } from "@/types";
 
 export const TAGLINE = "MEET. TONIGHT. CONNECT.";
 export const TAGLINE_SECONDARY =
-  "La plateforme adulte où le plaisir n'a pas de frontières — rencontrez, connectez-vous, vivez.";
-export const TAGLINE_TERTIARY = "Sans tabou. Sans jugement. Partout dans le monde.";
+  "Rencontres adultes sans filtre — désirs assumés, fantaisies partagées, plaisir immédiat.";
+export const TAGLINE_TERTIARY = "Coquin·e, pervers·e, curieux·se — bienvenue chez vous. 18+ · Monde entier.";
 
 export const GENDER_LABELS: Record<Gender, string> = {
   male: "Homme",
@@ -62,7 +62,7 @@ export const VIP_GOLD_FEATURES = [
   "Visibilité maximale dans les recherches",
   "Recevoir des messages de tous les membres",
   "Interactions illimitées",
-  "Salons live (Phase 3)",
+  "Salons live & diffusion VIP",
 ];
 
 export const MEMBERSHIP_TIERS = [
@@ -117,43 +117,43 @@ export const INTEREST_SUGGESTIONS = [
   "Yoga",
 ];
 
-/** Illustrations stock — style JALF, identité Ultimate (Unsplash). */
+/** Illustrations stock sensuelles — identité Ultimate (Unsplash, 18+ marketing). */
 export const LANDING_HERO_IMAGE =
-  "https://images.unsplash.com/photo-1516589178581-6d783895a9e2?w=1600&q=80";
+  "https://images.unsplash.com/photo-1518199266791-5375a57590ae?w=1600&q=80";
 
 export const LANDING_PILLARS = [
   {
     id: "tonight",
     title: "Rencontres immédiates",
-    subtitle: "Ce soir",
-    desc: "Changez votre statut à « Disponible » et voyez qui est prêt·e à vous rencontrer maintenant, près de chez vous ou en voyage.",
+    subtitle: "Ce soir · maintenant",
+    desc: "Qui est chaud·e ce soir ? Activez votre statut, choisissez votre intention — rencontre, verre coquin ou plus — et connectez-vous tout de suite.",
     href: "/ce-soir",
-    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1547036967-7833c4055eba?w=800&q=80",
     live: true,
   },
   {
     id: "feed",
     title: "Fil communautaire",
-    subtitle: "Partage & connexion",
-    desc: "Publiez, commentez, aimez — une communauté adulte ouverte d'esprit qui partage ses envies sans filtre.",
+    subtitle: "Désirs & fantaisies",
+    desc: "Publiez sans filtre, commentez, likez — la communauté partage ce qui l'excite vraiment, sans pudibonderie.",
     href: "/fil",
-    image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&q=80",
     live: true,
   },
   {
     id: "messages",
     title: "Messagerie privée",
-    subtitle: "DM sans tabou",
-    desc: "Chats privés, albums photos et vidéos. Amenez votre chimie au niveau supérieur en toute discrétion.",
+    subtitle: "DM coquins",
+    desc: "Chats privés, photos et vidéos intimes. Passez du flirt à l'action en toute discrétion.",
     href: "/messages",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1511396060206-85a2afad1672?w=800&q=80",
     live: true,
   },
   {
     id: "private",
     title: "Contenu privé",
-    subtitle: "Photos & vidéos",
-    desc: "Albums privés avec contrôle d'accès. Partagez vos moments les plus intimes avec qui vous choisissez.",
+    subtitle: "Albums hot",
+    desc: "Photos et vidéos privées — vous décidez qui voit votre côté le plus sensuel.",
     href: "/mon-profil/albums-prives",
     image: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&q=80",
     live: true,
@@ -161,21 +161,32 @@ export const LANDING_PILLARS = [
   {
     id: "couples",
     title: "Profils couples",
-    subtitle: "Duo & fantaisies",
-    desc: "Un compte, deux personnes. Sélectionnez vos fantaisies et préférences adultes dès l'inscription.",
+    subtitle: "Duo & fantasmes",
+    desc: "Un compte, deux corps. Fantaisies, préférences et envies assumées — swing, trio, exhibition…",
     href: "/inscription",
-    image: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1516589178581-6d783895a9e2?w=800&q=80",
     live: true,
   },
   {
     id: "live",
     title: "Ultimate Live",
-    subtitle: "Webcams · Phase 3",
-    desc: "Salons live et appels vidéo — bientôt disponible pour les membres Premium et VIP Gold.",
-    href: "/premium",
+    subtitle: "Salons en direct",
+    desc: "Rejoignez ou lancez un salon live. VIP Gold peut diffuser en exclusif — la vidéo arrive très bientôt.",
+    href: "/live",
     image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&q=80",
-    live: false,
+    live: true,
   },
+] as const;
+
+/** Intentions rapides pour « Ce soir » — une touche et c'est publié. */
+export const TONIGHT_INTENT_CHIPS = [
+  "Rencontre maintenant",
+  "Verre coquin",
+  "Hôtel / chez moi",
+  "Juste discuter d'abord",
+  "Couple cherche duo",
+  "Fantaisie ce soir",
+  "Discret · dispo tard",
 ] as const;
 
 export const LANDING_TRUST = [
@@ -230,31 +241,31 @@ export const LANDING_STEPS = [
 
 export const LANDING_DEMO_PROFILES = [
   {
-    name: "Sarah",
+    name: "Luna",
     age: 29,
     city: "Paris",
     country: "FR",
     flag: "🇫🇷",
-    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600",
-    intention: "Faire connaissance",
+    photo: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80",
+    intention: "Disponible ce soir · coquine",
   },
   {
-    name: "James",
+    name: "Marcus",
     age: 34,
     city: "New York",
     country: "US",
     flag: "🇺🇸",
-    photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600",
-    intention: "Relation sérieuse",
+    photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&q=80",
+    intention: "Sans engagement · maintenant",
   },
   {
-    name: "Sophie",
+    name: "DuoLibre",
     age: 32,
     city: "Montréal",
     country: "CA",
     flag: "🇨🇦",
-    photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600",
-    intention: "Relation sérieuse",
+    photo: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&q=80",
+    intention: "Couple · fantasmes",
   },
   {
     name: "Amina",
@@ -262,8 +273,8 @@ export const LANDING_DEMO_PROFILES = [
     city: "Yaoundé",
     country: "CM",
     flag: "🇨🇲",
-    photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=600",
-    intention: "Disponible ce soir",
+    photo: "https://images.unsplash.com/photo-1531746020798-e6953b06a399?w=600&q=80",
+    intention: "Verre coquin ce soir",
   },
 ];
 

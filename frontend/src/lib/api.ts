@@ -27,6 +27,8 @@ import type {
   WorldResponse,
   FeedPost,
   FeedComment,
+  LiveRoom,
+  TonightAvailability,
 } from "@/types";
 
 // Vide en prod Netlify → requêtes relatives proxifiées vers Fly.io
@@ -286,8 +288,18 @@ export const api = {
       end_time?: string;
     }) => request<Availability>("/availability", { method: "POST", body: JSON.stringify(data) }),
     me: () => request<Availability[]>("/availability/me"),
-    tonight: () =>
-      request<{ date: string; users: PublicProfile[] }>("/availability/tonight"),
+    tonight: () => request<TonightAvailability>("/availability/tonight"),
+  },
+  live: {
+    list: () => request<{ rooms: LiveRoom[]; total_live: number }>("/live/rooms"),
+    start: (data: { title: string; description?: string; is_vip_only?: boolean }) =>
+      request<LiveRoom>("/live/rooms", { method: "POST", body: JSON.stringify(data) }),
+    join: (roomId: string) =>
+      request<LiveRoom>(`/live/rooms/${roomId}/join`, { method: "POST" }),
+    leave: (roomId: string) =>
+      request(`/live/rooms/${roomId}/leave`, { method: "POST" }),
+    end: (roomId: string) =>
+      request(`/live/rooms/${roomId}/end`, { method: "POST" }),
   },
   meetings: {
     list: () => request<Meeting[]>("/meetings"),

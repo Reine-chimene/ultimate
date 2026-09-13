@@ -28,4 +28,7 @@ class AvailabilityResponse(ORMModel, TimestampSchema):
 
 class TonightAvailabilityResponse(BaseModel):
     date: date
+    total_available: int = 0
+    compatible_available: int = 0
+    in_your_country: int = 0
     users: list[PublicProfileResponse]

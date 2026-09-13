@@ -222,6 +222,32 @@ export interface Availability {
   availability_label?: string | null;
 }
 
+export interface TonightAvailability {
+  date: string;
+  total_available: number;
+  compatible_available: number;
+  in_your_country: number;
+  users: PublicProfile[];
+}
+
+export type LiveRoomStatus = "live" | "ended";
+
+export interface LiveRoom {
+  id: string;
+  host_id: string;
+  host_display_name: string;
+  title: string;
+  description: string | null;
+  status: LiveRoomStatus;
+  viewer_count: number;
+  is_vip_only: boolean;
+  started_at: string;
+  is_host: boolean;
+  is_joined: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Notification {
   id: string;
   user_id: string;
