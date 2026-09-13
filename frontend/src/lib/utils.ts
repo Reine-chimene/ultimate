@@ -23,6 +23,10 @@ export function formatDateTime(dateStr: string) {
   return `${formatDate(dateStr)} à ${formatTime(dateStr)}`;
 }
 
+export function profileDisplayName(profile: { display_name?: string | null; first_name?: string | null }) {
+  return profile.display_name || profile.first_name || "Membre";
+}
+
 export function getPrimaryPhoto(photos: { url: string; is_primary: boolean }[]) {
   if (!photos.length) return "https://i.pravatar.cc/400?img=12";
   return photos.find((p) => p.is_primary)?.url ?? photos[0].url;

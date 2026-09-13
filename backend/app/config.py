@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     s3_secret_key: str | None = Field(default=None, validation_alias="S3_SECRET_KEY")
     s3_region: str = Field(default="auto", validation_alias="S3_REGION")
     s3_public_base_url: str | None = Field(default=None, validation_alias="S3_PUBLIC_BASE_URL")
+    frontend_url: str = Field(default="http://localhost:3100", validation_alias="FRONTEND_URL")
+    smtp_host: str | None = Field(default=None, validation_alias="SMTP_HOST")
+    smtp_port: int = Field(default=587, validation_alias="SMTP_PORT")
+    smtp_user: str | None = Field(default=None, validation_alias="SMTP_USER")
+    smtp_password: str | None = Field(default=None, validation_alias="SMTP_PASSWORD")
+    email_from: str = Field(default="noreply@ultimate.app", validation_alias="EMAIL_FROM")
 
     @field_validator("database_url", mode="after")
     @classmethod

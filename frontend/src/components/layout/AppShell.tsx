@@ -11,6 +11,7 @@ import {
   Heart,
   MessageCircle,
   Moon,
+  Search,
   Settings,
   Shield,
   User,
@@ -21,13 +22,14 @@ import { cn } from "@/lib/utils";
 
 const mainNavItems = [
   { href: "/decouvrir", label: "Découvrir", icon: Compass, match: (p: string) => p.startsWith("/decouvrir") },
-  { href: "/matchs", label: "Connexions", icon: Heart, match: (p: string) => p.startsWith("/matchs") },
+  { href: "/recherche", label: "Recherche", icon: Search, match: (p: string) => p.startsWith("/recherche") },
   { href: "/messages", label: "Messages", icon: MessageCircle, match: (p: string) => p.startsWith("/messages") },
   { href: "/ce-soir", label: "Ce soir", icon: Moon, match: (p: string) => p.startsWith("/ce-soir") },
-  { href: "/mon-profil", label: "Profil", icon: User, match: (p: string) => p.startsWith("/mon-profil") || p.startsWith("/profil") || p.startsWith("/preferences") || p.startsWith("/parametres") || p.startsWith("/voyage") || p.startsWith("/world") || p.startsWith("/premium") || p.startsWith("/rendez-vous") },
+  { href: "/mon-profil", label: "Profil", icon: User, match: (p: string) => p.startsWith("/mon-profil") || p.startsWith("/profil") || p.startsWith("/preferences") || p.startsWith("/parametres") || p.startsWith("/voyage") || p.startsWith("/world") || p.startsWith("/premium") || p.startsWith("/rendez-vous") || p.startsWith("/matchs") },
 ];
 
 const desktopExtraNav = [
+  { href: "/matchs", label: "Matchs", icon: Heart, match: (p: string) => p.startsWith("/matchs") },
   { href: "/world", label: "Ultimate World", icon: Globe2, match: (p: string) => p.startsWith("/world") },
   { href: "/rendez-vous/demandes", label: "Rendez-vous", icon: Calendar, match: (p: string) => p.startsWith("/rendez-vous") },
   { href: "/premium", label: "Premium", icon: Crown, match: (p: string) => p.startsWith("/premium") },

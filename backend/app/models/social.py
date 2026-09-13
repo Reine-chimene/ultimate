@@ -97,6 +97,18 @@ class Block(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     blocked: Mapped["User"] = relationship("User", foreign_keys=[blocked_id])
 
 
+class ProfilePass(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    __tablename__ = "profile_passes"
+    __table_args__ = (UniqueConstraint("passer_id", "passed_id", name="uq_profile_pass_pair"),)
+
+    passer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    passed_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+
 class Report(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "reports"
 

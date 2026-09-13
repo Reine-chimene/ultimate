@@ -13,6 +13,7 @@ from app.routers import (
     notifications,
     profiles,
     reports,
+    search,
     subscriptions,
     travel,
     world,
@@ -24,6 +25,7 @@ api_router.include_router(auth.router)
 api_router.include_router(profiles.router)
 api_router.include_router(connections.router)
 api_router.include_router(discovery.router)
+api_router.include_router(search.router)
 api_router.include_router(likes.router)
 api_router.include_router(matches.router)
 api_router.include_router(messages.router)

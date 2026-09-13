@@ -9,6 +9,7 @@ from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.availability import AvailabilityResponse, AvailabilitySet, TonightAvailabilityResponse
 from app.services.compatibility import is_compatible
+from app.services.pass_service import PassService
 from app.services.profile_service import ProfileService
 from app.timezone_utils import format_availability_slot
 
@@ -102,9 +103,12 @@ class AvailabilityService:
         )
         rows = result.all()
         my_profile = await self.profile_service._get_profile_by_user_id(current_user.id)
+        passed_ids = await PassService(self.db).get_passed_ids(current_user.id)
 
         users = []
         for user, profile, availability in rows:
+            if user.id in passed_ids:
+                continue
             if my_profile and not is_compatible(current_user, my_profile, user, profile):
                 continue
             note = availability.note

@@ -68,5 +68,6 @@ class Interest(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
+    category: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     profile: Mapped["Profile"] = relationship("Profile", back_populates="interests")

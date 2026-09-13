@@ -7,36 +7,45 @@ import { useRouter } from "next/navigation";
 import { Clock, Heart, MessageCircle, Sparkles, UserPlus, X } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Match, PendingRequestItem } from "@/types";
-import { getPrimaryPhoto, formatDate } from "@/lib/utils";
+import { getPrimaryPhoto, formatDate, profileDisplayName } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { Button } from "@/components/ui/Button";
 import { MatchModal } from "@/components/discovery/MatchModal";
 
-type Tab = "connections" | "received" | "sent";
+type Tab = "interests_received" | "interests_sent" | "requests_received" | "requests_sent" | "connections";
+type InterestItem = { user_id: string; profile: PendingRequestItem["profile"]; created_at: string };
 
 export default function MatchesPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("received");
+  const [tab, setTab] = useState<Tab>("interests_received");
   const [matches, setMatches] = useState<Match[]>([]);
+  const [interestsReceived, setInterestsReceived] = useState<InterestItem[]>([]);
+  const [interestsSent, setInterestsSent] = useState<InterestItem[]>([]);
   const [received, setReceived] = useState<PendingRequestItem[]>([]);
   const [sent, setSent] = useState<PendingRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [matchProfile, setMatchProfile] = useState<PendingRequestItem["profile"] | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
+  const [likesRemaining, setLikesRemaining] = useState<number | null>(null);
   const [requestsRemaining, setRequestsRemaining] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [matchList, pending] = await Promise.all([
+      const [matchList, pending, likesIn, likesOut] = await Promise.all([
         api.matches.list(),
         api.connections.pending(),
+        api.profiles.likesReceived(),
+        api.profiles.likesSent(),
       ]);
       setMatches(matchList);
       setReceived(pending.received);
       setSent(pending.sent);
+      setInterestsReceived(likesIn.received);
+      setInterestsSent(likesOut.sent);
+      setLikesRemaining(likesIn.likes_remaining ?? null);
       setRequestsRemaining(pending.requests_remaining ?? null);
     } finally {
       setLoading(false);
@@ -59,26 +68,44 @@ export default function MatchesPage() {
     await load();
   };
 
+  const handleInterestBack = async (item: InterestItem) => {
+    const result = await api.profiles.like(item.user_id);
+    if (result.is_match && result.match_id) {
+      setMatchProfile(item.profile);
+      setMatchId(result.match_id);
+    }
+    await load();
+  };
+
   if (loading) return <LoadingSpinner />;
 
   const tabs: { id: Tab; label: string; count: number }[] = [
-    { id: "received", label: "Demandes reçues", count: received.length },
-    { id: "sent", label: "Demandes envoyées", count: sent.length },
-    { id: "connections", label: "Vos connexions", count: matches.length },
+    { id: "interests_received", label: "Intérêts reçus", count: interestsReceived.length },
+    { id: "interests_sent", label: "Intérêts envoyés", count: interestsSent.length },
+    { id: "connections", label: "Matchs", count: matches.length },
+    { id: "requests_received", label: "Demandes reçues", count: received.length },
+    { id: "requests_sent", label: "Demandes envoyées", count: sent.length },
   ];
 
   return (
     <div>
       <PageHeader
-        title="Connexions"
-        subtitle="Demande → Acceptation → Connexion → Message. Pas de messagerie avant connexion."
+        title="Matchs & connexions"
+        subtitle="J'aime → intérêt réciproque → match → message. Les demandes de connexion restent disponibles en parallèle."
       />
 
-      {requestsRemaining != null && (
+      {likesRemaining != null && (
+        <p className="mb-2 text-sm text-[#9a8f8a]">
+          {likesRemaining > 0
+            ? `${likesRemaining} interaction${likesRemaining > 1 ? "s" : ""} restante${likesRemaining > 1 ? "s" : ""} aujourd'hui`
+            : "Limite quotidienne atteinte — Passez à Premium pour plus d'interactions."}
+        </p>
+      )}
+      {requestsRemaining != null && received.length + sent.length > 0 && (
         <p className="mb-4 text-sm text-[#9a8f8a]">
           {requestsRemaining > 0
-            ? `${requestsRemaining} demande${requestsRemaining > 1 ? "s" : ""} restante${requestsRemaining > 1 ? "s" : ""} aujourd'hui`
-            : "Limite quotidienne atteinte — Passez à Premium pour envoyer davantage de demandes."}
+            ? `${requestsRemaining} demande${requestsRemaining > 1 ? "s" : ""} de connexion restante${requestsRemaining > 1 ? "s" : ""}`
+            : "Limite de demandes de connexion atteinte."}
         </p>
       )}
 
@@ -99,12 +126,62 @@ export default function MatchesPage() {
         ))}
       </div>
 
-      {tab === "received" && (
+      {tab === "interests_received" && (
+        interestsReceived.length === 0 ? (
+          <EmptyState
+            icon={Heart}
+            title="Aucun intérêt reçu"
+            description="Quand quelqu'un vous aime, son profil apparaît ici. Répondez par un J'aime pour créer un match."
+            actionLabel="Découvrir des profils"
+            actionHref="/decouvrir"
+          />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {interestsReceived.map((item) => (
+              <InterestCard
+                key={item.user_id}
+                item={item}
+                badge="Intéressé·e par vous"
+                actionLabel="J'aime en retour"
+                onAction={() => handleInterestBack(item)}
+                onView={() => router.push(`/profil/${item.profile.id}`)}
+              />
+            ))}
+          </div>
+        )
+      )}
+
+      {tab === "interests_sent" && (
+        interestsSent.length === 0 ? (
+          <EmptyState
+            icon={Clock}
+            title="Aucun intérêt envoyé"
+            description="Exprimez votre intérêt via Découvrir, Recherche ou Ce soir."
+            actionLabel="Découvrir"
+            actionHref="/decouvrir"
+          />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {interestsSent.map((item) => (
+              <InterestCard
+                key={item.user_id}
+                item={item}
+                badge="En attente de réponse"
+                actionLabel="Voir le profil"
+                onAction={() => router.push(`/profil/${item.profile.id}`)}
+                onView={() => router.push(`/profil/${item.profile.id}`)}
+              />
+            ))}
+          </div>
+        )
+      )}
+
+      {tab === "requests_received" && (
         received.length === 0 ? (
           <EmptyState
             icon={UserPlus}
             title="Aucune demande reçue"
-            description="Lorsqu'une personne compatible vous envoie une demande, elle apparaîtra ici."
+            description="Les demandes de connexion avec message apparaissent ici (mode hybride)."
             actionLabel="Découvrir des profils"
             actionHref="/decouvrir"
           />
@@ -123,12 +200,12 @@ export default function MatchesPage() {
         )
       )}
 
-      {tab === "sent" && (
+      {tab === "requests_sent" && (
         sent.length === 0 ? (
           <EmptyState
             icon={Clock}
             title="Aucune demande en attente"
-            description="Exprimez votre intérêt via Découvrir ou Ce soir — la demande apparaîtra ici en attendant une réponse."
+            description="Les demandes de connexion avec message apparaissent ici."
             actionLabel="Découvrir"
             actionHref="/decouvrir"
           />
@@ -139,7 +216,7 @@ export default function MatchesPage() {
                 <div className="relative h-40">
                   <Image
                     src={getPrimaryPhoto(item.profile.photos)}
-                    alt={item.profile.first_name}
+                    alt={profileDisplayName(item.profile)}
                     fill
                     className="object-cover"
                     sizes="320px"
@@ -151,7 +228,7 @@ export default function MatchesPage() {
                 </div>
                 <div className="p-4">
                   <h3 className="font-display text-lg font-semibold">
-                    {item.profile.first_name}, {item.profile.age}
+                    {profileDisplayName(item.profile)}, {item.profile.age}
                   </h3>
                   <p className="text-sm text-[#9a8f8a]">{item.profile.location_label}</p>
                   <Link href={`/profil/${item.profile.id}`} className="mt-3 block">
@@ -183,7 +260,7 @@ export default function MatchesPage() {
                   <div className="relative h-52">
                     <Image
                       src={getPrimaryPhoto(other.photos)}
-                      alt={other.first_name}
+                      alt={profileDisplayName(other)}
                       fill
                       className="object-cover"
                       sizes="320px"
@@ -198,7 +275,7 @@ export default function MatchesPage() {
                   </div>
                   <div className="p-5">
                     <h3 className="font-display text-xl font-semibold">
-                      {other.first_name}, {other.age}
+                      {profileDisplayName(other)}, {other.age}
                     </h3>
                     <p className="text-sm text-[#9a8f8a]">{other.location_label || other.city}</p>
                     <p className="mt-1 text-xs text-[#9a8f8a]/80">
@@ -239,6 +316,46 @@ export default function MatchesPage() {
   );
 }
 
+function InterestCard({
+  item,
+  badge,
+  actionLabel,
+  onAction,
+  onView,
+}: {
+  item: InterestItem;
+  badge: string;
+  actionLabel: string;
+  onAction: () => void;
+  onView: () => void;
+}) {
+  const p = item.profile;
+  return (
+    <article className="premium-card overflow-hidden">
+      <div className="relative h-44 cursor-pointer" onClick={onView}>
+        <Image
+          src={getPrimaryPhoto(p.photos)}
+          alt={profileDisplayName(p)}
+          fill
+          className="object-cover"
+          sizes="320px"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0b] to-transparent" />
+        <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2 py-0.5 text-[10px] uppercase tracking-wide backdrop-blur-sm">
+          {badge}
+        </span>
+      </div>
+      <div className="p-4">
+        <h3 className="font-display text-lg font-semibold">{profileDisplayName(p)}, {p.age}</h3>
+        <p className="text-sm text-[#9a8f8a]">{p.location_label}</p>
+        <Button variant="gold" size="sm" className="mt-4 w-full" onClick={onAction}>
+          <Heart className="h-4 w-4" /> {actionLabel}
+        </Button>
+      </div>
+    </article>
+  );
+}
+
 function PendingCard({
   item,
   onAccept,
@@ -256,7 +373,7 @@ function PendingCard({
       <div className="relative h-44 cursor-pointer" onClick={onView}>
         <Image
           src={getPrimaryPhoto(p.photos)}
-          alt={p.first_name}
+          alt={profileDisplayName(p)}
           fill
           className="object-cover"
           sizes="320px"
@@ -264,7 +381,7 @@ function PendingCard({
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0b] to-transparent" />
       </div>
       <div className="p-4">
-        <h3 className="font-display text-lg font-semibold">{p.first_name}, {p.age}</h3>
+        <h3 className="font-display text-lg font-semibold">{profileDisplayName(p)}, {p.age}</h3>
         <p className="text-sm text-[#9a8f8a]">{p.location_label}</p>
         {item.intro_message && (
           <div className="mt-3 rounded-lg bg-white/[0.03] p-3">

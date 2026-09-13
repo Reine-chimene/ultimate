@@ -5,10 +5,10 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.enums import ConnectionRequestStatus, ConnectionState, SubscriptionPlan, SubscriptionStatus
+from app.models.enums import ConnectionRequestStatus, ConnectionState
 from app.models.profile import Profile
 from app.models.social import Block, Conversation, Like, Match
-from app.models.subscription import Notification, Subscription
+from app.models.subscription import Notification
 from app.models.user import User
 from app.schemas.connections import (
     ConnectionActionResponse,
@@ -18,11 +18,8 @@ from app.schemas.connections import (
     PendingRequestsResponse,
 )
 from app.services.compatibility import is_compatible
+from app.services.premium_service import PremiumService
 from app.services.profile_service import ProfileService
-
-FREE_DAILY_REQUEST_LIMIT = 5
-PREMIUM_DAILY_REQUEST_LIMIT = 25
-
 
 class ConnectionService:
     def __init__(self, db: AsyncSession):
@@ -51,23 +48,11 @@ class ConnectionService:
         )
         return result.scalar_one_or_none()
 
-    async def _is_premium(self, user: User) -> bool:
-        result = await self.db.execute(
-            select(Subscription).where(
-                Subscription.user_id == user.id,
-                Subscription.status == SubscriptionStatus.ACTIVE,
-                Subscription.plan.in_([SubscriptionPlan.PREMIUM, SubscriptionPlan.VIP]),
-            )
-        )
-        sub = result.scalars().first()
-        if sub is None:
-            return False
-        if sub.expires_at and sub.expires_at < datetime.now(UTC):
-            return False
-        return True
+    def _display(self, user: User) -> str:
+        return (user.display_name or user.first_name).strip()
 
     async def _daily_limit(self, user: User) -> int:
-        return PREMIUM_DAILY_REQUEST_LIMIT if await self._is_premium(user) else FREE_DAILY_REQUEST_LIMIT
+        return await PremiumService(self.db).daily_like_limit(user)
 
     async def _requests_sent_today(self, user_id: UUID) -> int:
         today = date.today()
@@ -118,6 +103,12 @@ class ConnectionService:
                 requests_remaining=await self.requests_remaining(current_user),
             )
 
+        if received_like and received_like.is_like and received_like.request_status is None:
+            return ConnectionStatusResponse(
+                state=ConnectionState.INTEREST_RECEIVED,
+                requests_remaining=await self.requests_remaining(current_user),
+            )
+
         if sent_like:
             if sent_like.request_status == ConnectionRequestStatus.DECLINED or not sent_like.is_like:
                 return ConnectionStatusResponse(state=ConnectionState.DECLINED)
@@ -125,6 +116,11 @@ class ConnectionService:
                 return ConnectionStatusResponse(
                     state=ConnectionState.PENDING_SENT,
                     intro_message=sent_like.intro_message,
+                    requests_remaining=await self.requests_remaining(current_user),
+                )
+            if sent_like.is_like and sent_like.request_status is None:
+                return ConnectionStatusResponse(
+                    state=ConnectionState.INTEREST_SENT,
                     requests_remaining=await self.requests_remaining(current_user),
                 )
 
@@ -154,7 +150,7 @@ class ConnectionService:
                 user_id=uid,
                 type="connection",
                 title="Nouvelle connexion",
-                body=f"Vous êtes maintenant connecté·e avec {other.first_name if other else 'quelqu un'}!",
+                body=f"Vous êtes maintenant connecté·e avec {self._display(other) if other else 'quelqu un'}!",
             )
             self.db.add(notification)
 
@@ -226,7 +222,7 @@ class ConnectionService:
             user_id=data.receiver_id,
             type="connection_request",
             title="Nouvelle demande de connexion",
-            body=f"{sender.first_name} souhaite se connecter avec vous.",
+            body=f"{self._display(sender)} souhaite se connecter avec vous.",
         )
         self.db.add(notification)
         await self.db.commit()
@@ -263,7 +259,7 @@ class ConnectionService:
             user_id=sender_id,
             type="connection_accepted",
             title="Demande acceptée",
-            body=f"{user.first_name} a accepté votre demande de connexion!",
+            body=f"{self._display(user)} a accepté votre demande de connexion!",
         )
         self.db.add(notification)
         await self.db.commit()
@@ -292,7 +288,7 @@ class ConnectionService:
             user_id=sender_id,
             type="connection_declined",
             title="Demande déclinée",
-            body=f"{user.first_name} a décliné votre demande de connexion.",
+            body=f"{self._display(user)} a décliné votre demande de connexion.",
         )
         self.db.add(notification)
         await self.db.commit()

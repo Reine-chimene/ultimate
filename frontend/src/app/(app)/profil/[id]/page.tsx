@@ -8,7 +8,9 @@ import { api } from "@/lib/api";
 import type { ConnectionState, PublicProfile } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { INTENTION_LABELS, GENDER_LABELS } from "@/lib/constants";
-import { getPrimaryPhoto } from "@/lib/utils";
+import { LikeButton } from "@/components/profile/LikeButton";
+import { OnlineStatus } from "@/components/profile/OnlineStatus";
+import { getPrimaryPhoto, profileDisplayName } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { MatchModal } from "@/components/discovery/MatchModal";
 import { ConnectionRequestModal } from "@/components/connections/ConnectionRequestModal";
@@ -89,7 +91,7 @@ export default function ProfileDetailPage() {
     <div className="mx-auto max-w-2xl animate-fade-in">
       <div className="premium-card overflow-hidden">
         <div className="relative aspect-[4/5] max-h-[70vh]">
-          <Image src={currentPhoto} alt={profile.first_name} fill className="object-cover" priority sizes="(max-width:768px) 100vw, 640px" />
+          <Image src={currentPhoto} alt={profileDisplayName(profile)} fill className="object-cover" priority sizes="(max-width:768px) 100vw, 640px" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0b] via-[#0a0a0b]/10 to-transparent" />
           {profile.is_available_tonight && (
             <span className="absolute left-4 top-4 rounded-full bg-[#6b1d3a]/90 px-3 py-1 text-xs font-medium uppercase tracking-wide">
@@ -98,8 +100,9 @@ export default function ProfileDetailPage() {
           )}
           <div className="absolute bottom-0 p-6">
             <h1 className="font-display text-4xl font-bold md:text-5xl">
-              {profile.first_name}, {profile.age}
+              {profileDisplayName(profile)}, {profile.age}
             </h1>
+            <OnlineStatus status={profile.online_status} className="mt-2" />
             <div className="mt-2 flex items-center gap-2 text-[#9a8f8a]">
               <MapPin className="h-4 w-4" /> {profile.location_label || profile.city}
             </div>
@@ -167,10 +170,10 @@ export default function ProfileDetailPage() {
         <div className="space-y-3 border-t border-white/[0.06] pt-5">
           {isConnected ? (
             <>
-              <p className="text-center text-sm text-[#c9a962]">Connectés</p>
+              <p className="text-center text-sm font-medium text-[#c9a962]">C&apos;est un match !</p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button variant="gold" onClick={() => router.push(`/messages/${matchId}`)} className="flex-1">
-                  <MessageCircle className="h-4 w-4" /> Message
+                  <MessageCircle className="h-4 w-4" /> Envoyer un message
                 </Button>
                 <Button
                   variant="outline"
@@ -195,15 +198,25 @@ export default function ProfileDetailPage() {
                 </Button>
               </div>
             </>
+          ) : connectionState === "interest_received" ? (
+            <LikeButton profile={{ ...profile, connection_state: "interest_received" }} className="w-full" onStateChange={() => void load()} />
+          ) : connectionState === "interest_sent" ? (
+            <p className="text-center text-sm text-[#c9a962]">Intérêt envoyé — en attente de réciprocité</p>
           ) : connectionState === "declined" ? (
             <p className="text-center text-sm text-[#9a8f8a]">Demande déclinée</p>
           ) : (
             <>
-              <Button variant="gold" onClick={() => setShowConnectModal(true)} className="w-full">
-                <Heart className="h-4 w-4" /> Envoyer une demande de connexion
-              </Button>
+              <LikeButton profile={profile} className="w-full" onStateChange={() => void load()} />
+              <details className="text-center">
+                <summary className="cursor-pointer text-xs text-[#9a8f8a] hover:text-[#f5f0e8]">
+                  Autre option : demande avec message
+                </summary>
+                <Button variant="outline" onClick={() => setShowConnectModal(true)} className="mt-3 w-full">
+                  Demande avec message
+                </Button>
+              </details>
               <p className="text-center text-xs text-[#9a8f8a]">
-                Vous devez être connectés pour échanger des messages.
+                Match mutuel requis pour la messagerie.
               </p>
             </>
           )}
@@ -225,7 +238,7 @@ export default function ProfileDetailPage() {
 
       {showConnectModal && (
         <ConnectionRequestModal
-          name={profile.first_name}
+          name={profileDisplayName(profile)}
           requestsRemaining={requestsRemaining}
           onClose={() => setShowConnectModal(false)}
           onSend={handleSendRequest}
@@ -235,7 +248,7 @@ export default function ProfileDetailPage() {
       {showReport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="premium-card w-full max-w-md p-6">
-            <h3 className="font-display text-lg font-semibold">Signaler {profile.first_name}</h3>
+            <h3 className="font-display text-lg font-semibold">Signaler {profileDisplayName(profile)}</h3>
             <textarea
               className="input-field mt-4 min-h-[100px]"
               placeholder="Décrivez la raison du signalement..."

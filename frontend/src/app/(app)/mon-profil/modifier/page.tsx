@@ -8,7 +8,8 @@ import { api } from "@/lib/api";
 import type { Profile, RelationshipIntention } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
-import { INTEREST_SUGGESTIONS, INTENTION_LABELS } from "@/lib/constants";
+import { INTENTION_LABELS } from "@/lib/constants";
+import { InterestSelector } from "@/components/profile/InterestSelector";
 import { COUNTRIES, defaultTimezoneForCountry } from "@/lib/countries";
 import { getPrimaryPhoto } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -17,6 +18,7 @@ import { PhotoUpload } from "@/components/profile/PhotoUpload";
 export default function EditProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [occupation, setOccupation] = useState("");
   const [intention, setIntention] = useState<RelationshipIntention>("friendship");
@@ -30,6 +32,7 @@ export default function EditProfilePage() {
   useEffect(() => {
     api.profiles.me().then((p) => {
       setProfile(p);
+      setDisplayName(p.display_name ?? "");
       setBio(p.bio ?? "");
       setOccupation(p.occupation ?? "");
       setIntention(p.relationship_intention);
@@ -43,6 +46,7 @@ export default function EditProfilePage() {
     setLoading(true);
     try {
       await api.profiles.update({
+        display_name: displayName.trim() || undefined,
         bio,
         occupation,
         relationship_intention: intention,
@@ -58,11 +62,6 @@ export default function EditProfilePage() {
 
   const handleDeletePhoto = async (id: string) => {
     await api.profiles.deletePhoto(id);
-    await refreshProfile();
-  };
-
-  const handleAddInterest = async (name: string) => {
-    await api.profiles.addInterest(name);
     await refreshProfile();
   };
 
@@ -99,6 +98,15 @@ export default function EditProfilePage() {
       </section>
 
       <div className="premium-card space-y-4 p-6">
+        <Input
+          label="Nom affiché"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          minLength={2}
+          maxLength={50}
+          placeholder="Pseudonyme visible publiquement"
+        />
+        <p className="-mt-2 text-xs text-[#9a8f8a]">Votre prénom réel reste privé. Ce nom apparaît dans la découverte, la recherche et les messages.</p>
         <Textarea label="Bio / présentation" value={bio} onChange={(e) => setBio(e.target.value)} rows={4} placeholder="Parlez de vous..." />
         <Input label="Profession" value={occupation} onChange={(e) => setOccupation(e.target.value)} />
         <Select
@@ -123,18 +131,7 @@ export default function EditProfilePage() {
 
         <div>
           <label className="mb-2 block text-sm text-[#9a8f8a]">Centres d&apos;intérêt</label>
-          <div className="flex flex-wrap gap-2">
-            {INTEREST_SUGGESTIONS.filter((s) => !profile.interests.some((i) => i.name === s)).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => handleAddInterest(s)}
-                className="rounded-full border border-white/10 px-3 py-1 text-sm hover:bg-white/5"
-              >
-                + {s}
-              </button>
-            ))}
-          </div>
+          <InterestSelector selected={profile.interests} onChange={refreshProfile} />
         </div>
 
         <div className="flex gap-3 pt-4">

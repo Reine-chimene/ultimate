@@ -1,30 +1,31 @@
-from datetime import UTC, date, datetime
-from uuid import UUID
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.enums import DiscoveryMode, RelationshipIntention
 from app.models.meeting import Availability
-from app.models.profile import Profile
+from app.models.profile import Interest, Photo, Profile
 from app.models.social import Block, Like
 from app.models.travel import TravelPlan
 from app.models.user import User
-from app.schemas.discovery import DiscoveryFilters, DiscoveryResponse
-from app.schemas.profile import PublicProfileResponse
+from app.schemas.search import SearchFilters, SearchResponse
 from app.services.compatibility import calculate_age, is_compatible
 from app.services.pass_service import PassService
 from app.services.premium_service import PremiumService
+from app.services.presence_service import PresenceService
 from app.services.profile_service import ProfileService
 
 
-class DiscoveryService:
+class SearchService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.profile_service = ProfileService(db)
+        self.premium = PremiumService(db)
+        self.passes = PassService(db)
 
-    async def _get_excluded_user_ids(self, user_id: UUID) -> set[UUID]:
+    async def _excluded_ids(self, user_id) -> set:
         from app.models.enums import ConnectionRequestStatus
 
         liked = await self.db.execute(
@@ -46,7 +47,7 @@ class DiscoveryService:
         blocked_by = await self.db.execute(
             select(Block.blocker_id).where(Block.blocked_id == user_id)
         )
-        passed = await PassService(self.db).get_passed_ids(user_id)
+        passed = await self.passes.get_passed_ids(user_id)
         excluded = {user_id}
         excluded.update(liked.scalars().all())
         excluded.update(blocked.scalars().all())
@@ -54,7 +55,7 @@ class DiscoveryService:
         excluded.update(passed)
         return excluded
 
-    async def _get_active_travel(self, user_id: UUID) -> TravelPlan | None:
+    async def _get_active_travel(self, user_id):
         today = date.today()
         result = await self.db.execute(
             select(TravelPlan).where(
@@ -65,20 +66,27 @@ class DiscoveryService:
         )
         return result.scalars().first()
 
-    async def discover(
-        self, current_user: User, filters: DiscoveryFilters
-    ) -> DiscoveryResponse:
+    async def search(self, current_user: User, filters: SearchFilters) -> SearchResponse:
         my_profile = await self.profile_service._get_profile_by_user_id(current_user.id)
         if my_profile is None:
             raise ValueError("Profil introuvable")
 
-        premium = PremiumService(self.db)
-        if filters.mode == DiscoveryMode.INTERNATIONAL:
-            await premium.require_premium(current_user, "découverte internationale")
-        elif filters.mode == DiscoveryMode.TRAVEL:
-            await premium.require_premium(current_user, "mode voyage")
+        advanced = (
+            filters.has_photo
+            or filters.online_only
+            or filters.interest_category
+            or filters.max_distance_km is not None
+        )
+        if advanced and not await self.premium.can_use_advanced_search(current_user):
+            raise ValueError("La recherche avancée est réservée aux membres Premium.")
 
-        excluded_ids = await self._get_excluded_user_ids(current_user.id)
+        if filters.mode in (DiscoveryMode.INTERNATIONAL, DiscoveryMode.TRAVEL):
+            if filters.mode == DiscoveryMode.INTERNATIONAL:
+                await self.premium.require_premium(current_user, "recherche internationale")
+            else:
+                await self.premium.require_premium(current_user, "mode voyage")
+
+        excluded_ids = await self._excluded_ids(current_user.id)
         my_age = calculate_age(current_user.date_of_birth)
 
         query = (
@@ -116,13 +124,10 @@ class DiscoveryService:
 
         if filters.city:
             query = query.where(func.lower(User.city) == filters.city.lower())
-
         if filters.gender:
             query = query.where(User.gender == filters.gender)
-
         if filters.intention:
             query = query.where(Profile.relationship_intention == filters.intention)
-
         if filters.min_age:
             max_dob = date.today().replace(year=date.today().year - filters.min_age)
             query = query.where(User.date_of_birth <= max_dob)
@@ -138,7 +143,29 @@ class DiscoveryService:
             )
             query = query.where(User.id.in_(available_users))
 
-        query = query.limit(filters.limit * 2)
+        if filters.has_photo:
+            query = query.where(
+                exists().where(Photo.profile_id == Profile.id)
+            )
+
+        if filters.interest_category:
+            query = query.where(
+                exists().where(
+                    Interest.profile_id == Profile.id,
+                    Interest.category == filters.interest_category,
+                )
+            )
+
+        if filters.online_only:
+            threshold = datetime.now(UTC) - timedelta(hours=24)
+            query = query.where(User.last_seen_at.isnot(None), User.last_seen_at >= threshold)
+
+        count_query = select(func.count()).select_from(query.subquery())
+        total_result = await self.db.execute(count_query)
+        total = total_result.scalar_one()
+
+        offset = (filters.page - 1) * filters.page_size
+        query = query.offset(offset).limit(filters.page_size * 2)
         result = await self.db.execute(query)
         rows = result.all()
 
@@ -149,38 +176,32 @@ class DiscoveryService:
                 Availability.is_available.is_(True),
             )
         )
-        availability_map = {a.user_id: a.note for a in availability_result.scalars().all()}
-        available_tonight_ids = set(availability_map.keys())
+        availability_map = {a.user_id: a for a in availability_result.scalars().all()}
 
         max_distance = filters.max_distance_km or my_profile.max_distance_km
-
-        profiles: list[PublicProfileResponse] = []
+        profiles = []
         for user, profile in rows:
             if not is_compatible(current_user, my_profile, user, profile):
                 continue
-
+            avail = availability_map.get(user.id)
             pub = await self.profile_service.to_public_profile(
                 user,
                 profile,
                 current_user,
                 my_profile,
-                is_available_tonight=user.id in available_tonight_ids,
-                availability_note=availability_map.get(user.id),
+                is_available_tonight=avail is not None,
+                availability_note=avail.note if avail else None,
             )
-
-            if max_distance and pub.distance_km is not None:
-                if pub.distance_km > max_distance:
-                    continue
-
+            if max_distance and pub.distance_km is not None and pub.distance_km > max_distance:
+                continue
             profiles.append(pub)
+            if len(profiles) >= filters.page_size:
+                break
 
-        profiles.sort(
-            key=lambda p: (
-                p.profile_completion_percent or 0,
-                len(p.compatibility_indicators or []),
-                p.compatibility_score or 0,
-            ),
-            reverse=True,
+        return SearchResponse(
+            profiles=profiles,
+            total=total,
+            page=filters.page,
+            page_size=filters.page_size,
+            has_more=(offset + len(profiles)) < total,
         )
-        profiles = profiles[: filters.limit]
-        return DiscoveryResponse(profiles=profiles, total=len(profiles))

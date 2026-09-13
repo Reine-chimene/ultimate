@@ -38,6 +38,12 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Utilisateur introuvable ou inactif",
         )
+
+    from datetime import UTC, datetime
+
+    user.last_seen_at = datetime.now(UTC)
+    await db.commit()
+
     return user
 
 

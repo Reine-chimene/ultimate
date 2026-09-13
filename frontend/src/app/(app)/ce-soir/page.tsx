@@ -6,7 +6,7 @@ import { Moon, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Availability, PublicProfile } from "@/types";
 import { ProfileCard } from "@/components/discovery/ProfileCard";
-import { ConnectionRequestModal } from "@/components/connections/ConnectionRequestModal";
+import { MatchModal } from "@/components/discovery/MatchModal";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -19,7 +19,8 @@ export default function TonightPage() {
   const [note, setNote] = useState("");
   const [startTime, setStartTime] = useState("19:00");
   const [endTime, setEndTime] = useState("23:00");
-  const [connectProfile, setConnectProfile] = useState<PublicProfile | null>(null);
+  const [matchProfile, setMatchProfile] = useState<PublicProfile | null>(null);
+  const [matchId, setMatchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -52,10 +53,19 @@ export default function TonightPage() {
     await load();
   };
 
-  const handleConnectRequest = async (introMessage: string) => {
-    if (!connectProfile) return;
-    await api.connections.request(connectProfile.user_id, introMessage || undefined);
-    setConnectProfile(null);
+  const handleLike = async (profile: PublicProfile) => {
+    const result = await api.profiles.like(profile.user_id);
+    if (result.is_match && result.match_id) {
+      setMatchProfile(profile);
+      setMatchId(result.match_id);
+      setTonightUsers((prev) =>
+        prev.map((p) => (p.user_id === profile.user_id ? { ...p, connection_state: "connected" } : p)),
+      );
+      return;
+    }
+    setTonightUsers((prev) =>
+      prev.map((p) => (p.user_id === profile.user_id ? { ...p, connection_state: "interest_sent" } : p)),
+    );
   };
 
   if (loading) return <LoadingSpinner />;
@@ -161,18 +171,21 @@ export default function TonightPage() {
               compact
               showActions
               onView={() => router.push(`/profil/${p.id}`)}
-              onLike={() => setConnectProfile(p)}
-              likeLabel="Se connecter"
+              onLike={() => void handleLike(p)}
+              likeLabel="J'aime"
               onMeeting={p.is_connected ? () => router.push(`/rendez-vous/nouveau?user=${p.user_id}`) : undefined}
             />
           ))}
         </div>
       )}
-      {connectProfile && (
-        <ConnectionRequestModal
-          name={connectProfile.first_name}
-          onClose={() => setConnectProfile(null)}
-          onSend={handleConnectRequest}
+      {matchProfile && matchId && (
+        <MatchModal
+          profile={matchProfile}
+          onClose={() => {
+            setMatchProfile(null);
+            setMatchId(null);
+          }}
+          onMessage={() => router.push(`/messages/${matchId}`)}
         />
       )}
     </div>

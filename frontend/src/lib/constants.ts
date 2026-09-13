@@ -34,16 +34,42 @@ export const PREMIUM_PLANS = [
 ] as const;
 
 export const PREMIUM_FEATURES = [
+  "Recherche avancée (photo, en ligne, distance)",
   "Découverte internationale",
-  "Filtres avancés",
-  "Voir qui vous a aimé",
-  "Plus de likes",
-  "Visibilité prioritaire",
-  "Filtres avancés « Ce soir »",
   "Mode Voyage",
-  "Changer de destination",
-  "Découvrir plusieurs pays",
+  "25 interactions par jour (vs 5 gratuit)",
 ];
+
+export const INTEREST_CATEGORY_LABELS: Record<string, string> = {
+  outings: "Sorties",
+  travel: "Voyages",
+  food: "Gastronomie",
+  sport: "Sport",
+  music: "Musique",
+  culture: "Culture",
+  lifestyle: "Lifestyle",
+  dating: "Rencontres",
+  relationship: "Relation",
+  friendship: "Amitié",
+  affinities: "Affinités",
+  preferences: "Préférences personnelles",
+};
+
+/** @deprecated Use GET /profiles/interests/catalog via InterestSelector */
+export const INTEREST_CATALOG: Record<string, string[]> = {
+  outings: ["Restaurants", "Bars", "Soirées", "Sorties en ville"],
+  travel: ["Voyage", "Escapades", "Découverte", "Road trip"],
+  food: ["Gastronomie", "Cuisine", "Vin", "Cafés"],
+  sport: ["Fitness", "Randonnée", "Yoga", "Sports d'équipe"],
+  music: ["Concerts", "Festivals", "DJ", "Musique live"],
+  culture: ["Art", "Cinéma", "Théâtre", "Musées"],
+  lifestyle: ["Mode", "Bien-être", "Design", "Lifestyle"],
+  dating: ["Rencontres", "Flirt", "Connexion", "Chemistry"],
+  relationship: ["Relation", "Couple", "Engagement", "Sérieux"],
+  friendship: ["Amitié", "Social", "Networking", "Groupe"],
+  affinities: ["Affinités", "Compatibilité", "Valeurs", "Humour"],
+  preferences: ["Préférences", "Ouvert d'esprit", "Discrétion", "Authenticité"],
+};
 
 export const INTEREST_SUGGESTIONS = [
   "Voyage",

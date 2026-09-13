@@ -15,16 +15,21 @@ export type ReportStatus = "pending" | "reviewed" | "resolved" | "dismissed";
 
 export type ConnectionState =
   | "none"
+  | "interest_sent"
+  | "interest_received"
   | "pending_sent"
   | "pending_received"
   | "connected"
   | "declined"
   | "blocked";
 
+export type OnlineStatus = "online" | "recently_active" | "offline";
+
 export interface User {
   id: string;
   email: string;
   first_name: string;
+  display_name?: string | null;
   date_of_birth: string;
   gender: Gender;
   city: string;
@@ -47,13 +52,16 @@ export interface Photo {
 export interface Interest {
   id: string;
   name: string;
+  category?: string | null;
 }
 
 export interface PublicProfile {
   id: string;
   user_id: string;
-  first_name: string;
+  display_name: string;
+  first_name?: string | null;
   age: number;
+  online_status?: OnlineStatus | null;
   gender: Gender;
   city: string;
   country: string;
@@ -79,6 +87,7 @@ export interface PublicProfile {
 export interface Profile {
   id: string;
   user_id: string;
+  display_name?: string | null;
   bio: string | null;
   relationship_intention: RelationshipIntention;
   looking_for_genders: Gender[];

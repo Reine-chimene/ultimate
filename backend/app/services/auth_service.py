@@ -1,4 +1,6 @@
-from datetime import UTC, datetime
+import hashlib
+import secrets
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,11 +10,15 @@ from jose import JWTError
 from app.auth import create_access_token, create_refresh_token, hash_password, verify_password
 from app.auth.jwt import verify_refresh_token
 from app.countries import default_timezone_for_country
+from app.models.auth_tokens import PasswordResetToken
 from app.models.enums import Gender, RelationshipIntention, SubscriptionPlan, SubscriptionStatus
 from app.models.profile import Profile
 from app.models.subscription import Subscription
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.services.email_service import EmailService
+
+RESET_TOKEN_TTL = timedelta(hours=1)
 
 
 class AuthService:
@@ -27,10 +33,12 @@ class AuthService:
         country = data.country.upper()
         timezone = data.timezone or default_timezone_for_country(country)
 
+        first = data.first_name.strip()
         user = User(
             email=data.email.lower(),
             password_hash=hash_password(data.password),
-            first_name=data.first_name.strip(),
+            first_name=first,
+            display_name=first,
             date_of_birth=data.date_of_birth,
             gender=data.gender,
             city=data.city.strip(),
@@ -104,3 +112,44 @@ class AuthService:
         await self.db.commit()
         await self.db.refresh(user)
         return UserResponse.model_validate(user)
+
+    @staticmethod
+    def _hash_token(token: str) -> str:
+        return hashlib.sha256(token.encode()).hexdigest()
+
+    async def forgot_password(self, email: str) -> None:
+        """Always succeeds from caller perspective (no email enumeration)."""
+        result = await self.db.execute(select(User).where(User.email == email.lower()))
+        user = result.scalar_one_or_none()
+        if user is None:
+            return
+
+        raw_token = secrets.token_urlsafe(32)
+        token = PasswordResetToken(
+            user_id=user.id,
+            token_hash=self._hash_token(raw_token),
+            expires_at=datetime.now(UTC) + RESET_TOKEN_TTL,
+        )
+        self.db.add(token)
+        await self.db.commit()
+        await EmailService().send_password_reset(user.email, raw_token)
+
+    async def reset_password(self, token: str, new_password: str) -> None:
+        token_hash = self._hash_token(token)
+        result = await self.db.execute(
+            select(PasswordResetToken).where(
+                PasswordResetToken.token_hash == token_hash,
+                PasswordResetToken.used_at.is_(None),
+            )
+        )
+        reset = result.scalar_one_or_none()
+        if reset is None or reset.expires_at < datetime.now(UTC):
+            raise ValueError("Lien invalide ou expiré")
+
+        user = await self.db.get(User, reset.user_id)
+        if user is None or not user.is_active:
+            raise ValueError("Lien invalide ou expiré")
+
+        user.password_hash = hash_password(new_password)
+        reset.used_at = datetime.now(UTC)
+        await self.db.commit()

@@ -12,6 +12,7 @@ import { ProfileCompletionBar } from "@/components/profile/ProfileCompletionBar"
 import { PhotoUpload } from "@/components/profile/PhotoUpload";
 import type { ProfileCompletion } from "@/types";
 import { getPrimaryPhoto } from "@/lib/utils";
+import { InterestSelector } from "@/components/profile/InterestSelector";
 
 const STEPS = [
   "Parlez-nous de vous",
@@ -27,7 +28,6 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [completion, setCompletion] = useState<ProfileCompletion | null>(null);
-  const [interestInput, setInterestInput] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -140,32 +140,7 @@ export default function OnboardingPage() {
         )}
 
         {step === 4 && (
-          <>
-            <div className="flex flex-wrap gap-2">
-              {profile.interests.map((i) => (
-                <span key={i.id} className="rounded-full bg-white/10 px-3 py-1 text-sm">{i.name}</span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Ex. : Voyage, cuisine..."
-                value={interestInput}
-                onChange={(e) => setInterestInput(e.target.value)}
-              />
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  if (!interestInput.trim()) return;
-                  await api.profiles.addInterest(interestInput.trim());
-                  setInterestInput("");
-                  await refresh();
-                }}
-              >
-                Ajouter
-              </Button>
-            </div>
-            <p className="text-xs text-[#9a8f8a]">Sélectionnez au moins 3 intérêts.</p>
-          </>
+          <InterestSelector selected={profile.interests} onChange={refresh} minHint={3} />
         )}
       </div>
 

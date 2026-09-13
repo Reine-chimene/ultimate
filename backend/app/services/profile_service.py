@@ -28,6 +28,8 @@ from app.services.compatibility import (
     get_compatibility_indicators,
     is_compatible,
 )
+from app.constants.interests import ALL_INTEREST_LABELS, INTEREST_CATALOG
+from app.services.presence_service import PresenceService
 from app.services.profile_completion import compute_profile_completion
 from app.timezone_utils import format_availability_until
 
@@ -49,6 +51,7 @@ class ProfileService:
         return ProfileResponse(
             id=profile.id,
             user_id=profile.user_id,
+            display_name=user.display_name or user.first_name,
             bio=profile.bio,
             relationship_intention=profile.relationship_intention,
             looking_for_genders=profile.looking_for_genders,
@@ -80,7 +83,12 @@ class ProfileService:
             raise ValueError("Profil introuvable")
 
         update_data = data.model_dump(exclude_unset=True)
-        user_fields = {"city", "country", "timezone"}
+        user_fields = {"city", "country", "timezone", "display_name"}
+        if "display_name" in update_data and update_data["display_name"]:
+            dn = update_data["display_name"].strip()
+            if len(dn) < 2:
+                raise ValueError("Le nom affiché doit contenir au moins 2 caractères")
+            update_data["display_name"] = dn
         for key in list(update_data.keys()):
             if key in user_fields:
                 setattr(user, key, update_data.pop(key))
@@ -161,6 +169,15 @@ class ProfileService:
                 return ConnectionState.DECLINED
             if sent_like.request_status == ConnectionRequestStatus.PENDING:
                 return ConnectionState.PENDING_SENT
+            if sent_like.is_like and sent_like.request_status is None:
+                return ConnectionState.INTEREST_SENT
+
+        if (
+            received_like
+            and received_like.is_like
+            and received_like.request_status is None
+        ):
+            return ConnectionState.INTEREST_RECEIVED
 
         return ConnectionState.NONE
 
@@ -235,7 +252,13 @@ class ProfileService:
         if profile is None:
             raise ValueError("Profil introuvable")
 
-        interest = Interest(profile_id=profile.id, name=data.name.strip())
+        name = data.name.strip()
+        category = data.category.strip() if data.category else None
+        if name not in ALL_INTEREST_LABELS:
+            raise ValueError("Intérêt non reconnu. Choisissez une option de la liste.")
+        if category and category not in INTEREST_CATALOG:
+            raise ValueError("Catégorie d'intérêt non reconnue.")
+        interest = Interest(profile_id=profile.id, name=name, category=category)
         self.db.add(interest)
         await self.db.commit()
         await self.db.refresh(interest)
@@ -305,11 +328,15 @@ class ProfileService:
         if is_available_tonight and not note:
             note = format_availability_until(None, user.timezone)
 
+        online = PresenceService.online_status(user.last_seen_at)
+
         return PublicProfileResponse(
             id=profile.id,
             user_id=user.id,
-            first_name=user.first_name,
+            display_name=(user.display_name or user.first_name).strip(),
+            first_name=None,
             age=calculate_age(user.date_of_birth),
+            online_status=online.value,
             gender=user.gender,
             city=user.city,
             country=user.country,

@@ -8,7 +8,7 @@ import { ArrowLeft, Send } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Conversation, Match, Message } from "@/types";
-import { formatTime, getPrimaryPhoto } from "@/lib/utils";
+import { formatTime, getPrimaryPhoto, profileDisplayName } from "@/lib/utils";
 import { SafetyTips } from "@/components/ui/SafetyTips";
 
 export default function ConversationPage() {
@@ -59,11 +59,11 @@ export default function ConversationPage() {
         </Link>
         {other && (
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full ring-2 ring-[#c9a962]/30">
-            <Image src={getPrimaryPhoto(other.photos)} alt={other.first_name} fill className="object-cover" />
+            <Image src={getPrimaryPhoto(other.photos)} alt={profileDisplayName(other)} fill className="object-cover" />
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="truncate font-display text-lg font-semibold">{other?.first_name ?? "Conversation"}</h1>
+          <h1 className="truncate font-display text-lg font-semibold">{other ? profileDisplayName(other) : "Conversation"}</h1>
           <p className="truncate text-xs text-[#9a8f8a]">{other?.city ?? "Match"}</p>
         </div>
         {other && (

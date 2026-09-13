@@ -11,7 +11,7 @@ import { ProfileCompletionBar } from "@/components/profile/ProfileCompletionBar"
 import { Button } from "@/components/ui/Button";
 import { INTENTION_LABELS, GENDER_LABELS } from "@/lib/constants";
 import { getCountry } from "@/lib/countries";
-import { calculateAge, getPrimaryPhoto } from "@/lib/utils";
+import { calculateAge, getPrimaryPhoto, profileDisplayName } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { PhotoUpload } from "@/components/profile/PhotoUpload";
 
@@ -58,7 +58,7 @@ export default function MyProfilePage() {
         <div className="relative aspect-[4/5] max-h-[480px]">
           <Image
             src={getPrimaryPhoto(profile.photos)}
-            alt={user.first_name}
+            alt={profileDisplayName({ display_name: profile.display_name, first_name: user.first_name })}
             fill
             className="object-cover"
             sizes="(max-width:768px) 100vw, 640px"
@@ -66,7 +66,7 @@ export default function MyProfilePage() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0b] to-transparent" />
           <div className="absolute bottom-0 p-6">
             <h2 className="font-display text-4xl font-bold">
-              {user.first_name}, {calculateAge(user.date_of_birth)}
+              {profileDisplayName({ display_name: profile.display_name, first_name: user.first_name })}, {calculateAge(user.date_of_birth)}
             </h2>
             <div className="mt-2 flex items-center gap-2 text-[#9a8f8a]">
               <MapPin className="h-4 w-4" />

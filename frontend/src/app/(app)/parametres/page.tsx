@@ -71,6 +71,21 @@ export default function SettingsPage() {
           <Link href="/notifications" className="text-sm text-[#c9a962] hover:underline">Gérer les notifications →</Link>
         </div>
 
+        <div className="glass-card p-5">
+          <h2 className="font-medium mb-2">Profils passés</h2>
+          <p className="text-sm text-[#9a8f8a] mb-3">Réinitialisez la liste des profils que vous avez passés en découverte.</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              await api.profiles.clearPasses();
+              alert("Profils passés réinitialisés.");
+            }}
+          >
+            Réinitialiser les profils passés
+          </Button>
+        </div>
+
         <div className="flex gap-2 pt-4">
           <Link href="/conditions" className="text-sm text-[#9a8f8a] hover:text-[#f5f0e8]">Conditions</Link>
           <span className="text-[#9a8f8a]">·</span>

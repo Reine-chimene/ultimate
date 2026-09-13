@@ -6,7 +6,7 @@ import { RefreshCw, SlidersHorizontal } from "lucide-react";
 import { api } from "@/lib/api";
 import type { DiscoveryMode, Gender, PublicProfile, RelationshipIntention } from "@/types";
 import { ProfileCard } from "@/components/discovery/ProfileCard";
-import { ConnectionRequestModal } from "@/components/connections/ConnectionRequestModal";
+import { MatchModal } from "@/components/discovery/MatchModal";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -22,8 +22,9 @@ export default function DiscoverPage() {
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  const [connectProfile, setConnectProfile] = useState<PublicProfile | null>(null);
-  const [requestsRemaining, setRequestsRemaining] = useState<number | null>(null);
+  const [matchProfile, setMatchProfile] = useState<PublicProfile | null>(null);
+  const [matchId, setMatchId] = useState<string | null>(null);
+  const [likesRemaining, setLikesRemaining] = useState<number | null>(null);
 
   const [mode, setMode] = useState<DiscoveryMode>(
     (searchParams.get("mode") as DiscoveryMode) || "near_me",
@@ -68,16 +69,31 @@ export default function DiscoverPage() {
 
   const current = profiles[index];
 
-  const handlePass = () => setIndex((i) => i + 1);
+  const handlePass = async () => {
+    if (!current) return;
+    await api.profiles.pass(current.user_id).catch(() => {});
+    setIndex((i) => i + 1);
+  };
 
-  const handleConnectRequest = async (introMessage: string) => {
-    if (!connectProfile) return;
+  const handleLike = async () => {
+    if (!current) return;
     try {
-      const result = await api.connections.request(connectProfile.user_id, introMessage || undefined);
-      setRequestsRemaining(result.requests_remaining);
+      const result = await api.profiles.like(current.user_id);
+      setLikesRemaining(result.likes_remaining);
+      if (result.is_match && result.match_id) {
+        setMatchProfile(current);
+        setMatchId(result.match_id);
+        setProfiles((prev) =>
+          prev.map((p, i) => (i === index ? { ...p, connection_state: "connected" } : p)),
+        );
+        return;
+      }
+      setProfiles((prev) =>
+        prev.map((p, i) => (i === index ? { ...p, connection_state: "interest_sent" } : p)),
+      );
       setIndex((i) => i + 1);
-    } finally {
-      setConnectProfile(null);
+    } catch {
+      /* error shown via UI if needed */
     }
   };
 
@@ -183,24 +199,27 @@ export default function DiscoverPage() {
           <div className="flex justify-center px-0 sm:px-4">
             <ProfileCard
               profile={current}
-              onLike={() => setConnectProfile(current)}
-              onPass={handlePass}
+              onLike={() => void handleLike()}
+              onPass={() => void handlePass()}
               onView={() => router.push(`/profil/${current.id}`)}
-              likeLabel="Se connecter"
+              likeLabel="J'aime"
             />
           </div>
           <p className="mt-5 text-center text-sm text-[#9a8f8a]">
             {index + 1} sur {profiles.length} profils
+            {likesRemaining != null && ` · ${likesRemaining} interactions restantes aujourd'hui`}
           </p>
         </>
       )}
 
-      {connectProfile && (
-        <ConnectionRequestModal
-          name={connectProfile.first_name}
-          requestsRemaining={requestsRemaining}
-          onClose={() => setConnectProfile(null)}
-          onSend={handleConnectRequest}
+      {matchProfile && matchId && (
+        <MatchModal
+          profile={matchProfile}
+          onClose={() => {
+            setMatchProfile(null);
+            setMatchId(null);
+          }}
+          onMessage={() => router.push(`/messages/${matchId}`)}
         />
       )}
     </div>

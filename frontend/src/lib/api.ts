@@ -97,6 +97,16 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ refresh_token: refreshToken }),
       }),
+    forgotPassword: (email: string) =>
+      request<{ detail: string }>("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      }),
+    resetPassword: (token: string, newPassword: string) =>
+      request<{ detail: string }>("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ token, new_password: newPassword }),
+      }),
   },
   profiles: {
     me: () => request<Profile>("/profiles/me"),
@@ -139,14 +149,50 @@ export const api = {
       return res.json();
     },
     deletePhoto: (id: string) => request(`/profiles/me/photos/${id}`, { method: "DELETE" }),
-    addInterest: (name: string) =>
-      request("/profiles/me/interests", { method: "POST", body: JSON.stringify({ name }) }),
+    addInterest: (name: string, category?: string) =>
+      request("/profiles/me/interests", {
+        method: "POST",
+        body: JSON.stringify({ name, category: category || null }),
+      }),
+    like: (userId: string) =>
+      request<{ is_like: boolean; is_match: boolean; match_id: string | null; likes_remaining: number | null }>(
+        `/profiles/me/like/${userId}`,
+        { method: "POST" },
+      ),
+    unlike: (userId: string) =>
+      request(`/profiles/me/like/${userId}`, { method: "DELETE" }),
+    pass: (userId: string) =>
+      request(`/profiles/me/pass/${userId}`, { method: "POST" }),
+    clearPasses: () => request<{ cleared: number }>("/profiles/me/passes", { method: "DELETE" }),
+    likesReceived: () =>
+      request<{ received: { user_id: string; profile: PublicProfile; created_at: string }[]; likes_remaining: number }>(
+        "/profiles/me/likes-received",
+      ),
+    likesSent: () =>
+      request<{ sent: { user_id: string; profile: PublicProfile; created_at: string }[]; likes_remaining: number }>(
+        "/profiles/me/likes-sent",
+      ),
+    interestsCatalog: () => request<{ categories: Record<string, string[]> }>("/profiles/interests/catalog"),
     deleteInterest: (id: string) =>
       request(`/profiles/me/interests/${id}`, { method: "DELETE" }),
     completion: () =>
       request<{ percent: number; is_complete: boolean; missing: string[]; items: { key: string; label: string; done: boolean }[] }>(
         "/profiles/me/completion",
       ),
+  },
+  search: {
+    query: (params?: Record<string, string | number | boolean>) => {
+      const qs = params
+        ? "?" + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()
+        : "";
+      return request<{
+        profiles: PublicProfile[];
+        total: number;
+        page: number;
+        page_size: number;
+        has_more: boolean;
+      }>(`/search${qs}`);
+    },
   },
   discovery: {
     list: (params?: Record<string, string | number | boolean>) => {
@@ -179,7 +225,7 @@ export const api = {
   },
   likes: {
     action: (receiverId: string, isLike: boolean, introMessage?: string) =>
-      request<{ is_like: boolean; is_match: boolean; match_id: string | null }>("/likes", {
+      request<{ is_like: boolean; is_match: boolean; match_id: string | null; likes_remaining: number | null }>("/likes", {
         method: "POST",
         body: JSON.stringify({
           receiver_id: receiverId,

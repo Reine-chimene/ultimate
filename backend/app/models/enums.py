@@ -70,11 +70,34 @@ class ConnectionRequestStatus(str, enum.Enum):
 
 class ConnectionState(str, enum.Enum):
     NONE = "none"
+    INTEREST_SENT = "interest_sent"
+    INTEREST_RECEIVED = "interest_received"
     PENDING_SENT = "pending_sent"
     PENDING_RECEIVED = "pending_received"
     CONNECTED = "connected"
     DECLINED = "declined"
     BLOCKED = "blocked"
+
+
+class OnlineStatus(str, enum.Enum):
+    ONLINE = "online"
+    RECENTLY_ACTIVE = "recently_active"
+    OFFLINE = "offline"
+
+
+class InterestCategory(str, enum.Enum):
+    OUTINGS = "outings"
+    TRAVEL = "travel"
+    FOOD = "food"
+    SPORT = "sport"
+    MUSIC = "music"
+    CULTURE = "culture"
+    LIFESTYLE = "lifestyle"
+    DATING = "dating"
+    RELATIONSHIP = "relationship"
+    FRIENDSHIP = "friendship"
+    AFFINITIES = "affinities"
+    PREFERENCES = "preferences"
 
 
 def pg_enum(enum_class: type[enum.Enum], name: str, *, create_type: bool = True) -> SAEnum:

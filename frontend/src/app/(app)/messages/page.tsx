@@ -6,7 +6,7 @@ import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Match } from "@/types";
-import { getPrimaryPhoto, formatDate } from "@/lib/utils";
+import { getPrimaryPhoto, formatDate, profileDisplayName } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -43,14 +43,14 @@ export default function MessagesPage() {
                   <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-[#6b1d3a]/30">
                     <Image
                       src={getPrimaryPhoto(other.photos)}
-                      alt={other.first_name}
+                      alt={profileDisplayName(other)}
                       fill
                       className="object-cover"
                     />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="truncate font-medium">{other.first_name}</h3>
+                      <h3 className="truncate font-medium">{profileDisplayName(other)}</h3>
                       <span className="shrink-0 text-[11px] text-[#9a8f8a]">{formatDate(m.matched_at)}</span>
                     </div>
                     <p className="truncate text-sm text-[#9a8f8a]">{other.city}</p>

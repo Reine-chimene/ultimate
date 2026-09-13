@@ -21,11 +21,13 @@ class PhotoResponse(ORMModel, TimestampSchema):
 
 class InterestCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
+    category: str | None = Field(default=None, max_length=50)
 
 
 class InterestResponse(ORMModel, TimestampSchema):
     id: UUID
     name: str
+    category: str | None = None
 
 
 class ProfileUpdate(BaseModel):
@@ -35,6 +37,7 @@ class ProfileUpdate(BaseModel):
     city: str | None = Field(default=None, min_length=2, max_length=100)
     country: str | None = Field(default=None, min_length=2, max_length=2)
     timezone: str | None = Field(default=None, min_length=3, max_length=64)
+    display_name: str | None = Field(default=None, min_length=2, max_length=50)
 
 
 class PreferencesUpdate(BaseModel):
@@ -58,6 +61,7 @@ class PreferencesResponse(BaseModel):
 class ProfileResponse(ORMModel, TimestampSchema):
     id: UUID
     user_id: UUID
+    display_name: str | None = None
     bio: str | None
     relationship_intention: RelationshipIntention
     looking_for_genders: list[Gender]
@@ -78,8 +82,10 @@ class ProfileResponse(ORMModel, TimestampSchema):
 class PublicProfileResponse(ORMModel):
     id: UUID
     user_id: UUID
-    first_name: str
+    display_name: str
+    first_name: str | None = None
     age: int
+    online_status: str | None = None
     gender: Gender
     city: str
     country: str

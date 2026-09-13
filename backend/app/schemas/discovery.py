@@ -34,3 +34,4 @@ class LikeActionResponse(BaseModel):
     is_like: bool
     is_match: bool
     match_id: UUID | None = None
+    likes_remaining: int | None = None

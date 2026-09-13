@@ -30,7 +30,7 @@ export function MatchModal({ profile, onClose, onMessage }: MatchModalProps) {
             C&apos;est un match !
           </h2>
           <p className="mt-3 text-sm text-[#9a8f8a]">
-            Vous et {profile.first_name} vous êtes mutuellement intéressés.
+            Vous et {profile.display_name} vous êtes mutuellement intéressés.
             <br />
             Une belle occasion de faire connaissance.
           </p>
@@ -40,7 +40,7 @@ export function MatchModal({ profile, onClose, onMessage }: MatchModalProps) {
             <div className="relative h-full w-full overflow-hidden rounded-full ring-4 ring-[#c9a962]/50 ring-offset-4 ring-offset-[#1a1218]">
               <Image
                 src={getPrimaryPhoto(profile.photos)}
-                alt={profile.first_name}
+                alt={profile.display_name}
                 fill
                 className="object-cover"
               />
@@ -51,7 +51,7 @@ export function MatchModal({ profile, onClose, onMessage }: MatchModalProps) {
           </div>
 
           <p className="mt-5 text-xl font-medium">
-            {profile.first_name}, {profile.age}
+            {profile.display_name}, {profile.age}
           </p>
           <p className="text-sm text-[#9a8f8a]">{profile.city}</p>
 

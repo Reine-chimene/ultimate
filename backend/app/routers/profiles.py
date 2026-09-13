@@ -18,9 +18,13 @@ from app.schemas.profile import (
     ProfileUpdate,
     PublicProfileResponse,
 )
+from app.constants.interests import INTEREST_CATALOG
+from app.services.interest_service import InterestService
+from app.services.pass_service import PassService
 from app.services.photo_upload_service import PhotoUploadError, PhotoUploadService
 from app.services.profile_completion import compute_profile_completion
 from app.services.profile_service import ProfileService
+from app.schemas.interests import InterestListsResponse
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
@@ -156,6 +160,74 @@ async def delete_interest(
         await service.delete_interest(current_user, interest_id)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get("/interests/catalog")
+async def get_interests_catalog():
+    return {"categories": INTEREST_CATALOG}
+
+
+@router.post("/me/like/{user_id}", status_code=status.HTTP_201_CREATED)
+async def like_user(
+    user_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = InterestService(db)
+    try:
+        return await service.send_interest(current_user, user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.delete("/me/like/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def unlike_user(
+    user_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = InterestService(db)
+    try:
+        await service.remove_interest(current_user, user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get("/me/likes-received", response_model=InterestListsResponse)
+async def likes_received(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await InterestService(db).get_received(current_user)
+
+
+@router.get("/me/likes-sent", response_model=InterestListsResponse)
+async def likes_sent(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await InterestService(db).get_sent(current_user)
+
+
+@router.post("/me/pass/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def pass_user(
+    user_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await PassService(db).pass_profile(current_user, user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.delete("/me/passes", status_code=status.HTTP_200_OK)
+async def clear_passes(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    count = await PassService(db).clear_all_passes(current_user)
+    return {"cleared": count}
 
 
 @router.get("/{profile_id}", response_model=PublicProfileResponse)

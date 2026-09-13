@@ -10,6 +10,7 @@ from app.models.travel import TravelPlan
 from app.models.user import User
 from app.schemas.profile import PublicProfileResponse
 from app.schemas.travel import TravelMeResponse, TravelPlanCreate, TravelPlanResponse
+from app.services.premium_service import PremiumService
 from app.services.profile_service import ProfileService
 
 
@@ -19,6 +20,7 @@ class TravelService:
         self.profile_service = ProfileService(db)
 
     async def create_plan(self, user: User, data: TravelPlanCreate) -> TravelPlanResponse:
+        await PremiumService(self.db).require_premium(user, "mode voyage")
         if data.arrival_date > data.departure_date:
             raise ValueError("La date d'arrivée doit précéder la date de départ")
 
