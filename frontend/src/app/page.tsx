@@ -2,48 +2,24 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  Calendar,
   Crown,
-  Globe2,
-  Heart,
-  MessageCircle,
-  Moon,
-  Plane,
   Shield,
   Sparkles,
-  Users,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
-import { LANDING_DEMO_PROFILES, TAGLINE, TAGLINE_SECONDARY, TAGLINE_TERTIARY } from "@/lib/constants";
-import { WORLD_FLAGS } from "@/lib/countries";
-
-const STEPS = [
-  {
-    step: "01",
-    title: "Créez votre profil",
-    desc: "Ville, pays, intentions — présentez-vous avec authenticité partout dans le monde.",
-  },
-  {
-    step: "02",
-    title: "Demandez à vous connecter",
-    desc: "Découvrez des profils compatibles et envoyez une demande — pas de match instantané.",
-  },
-  {
-    step: "03",
-    title: "Rencontrez pour de vrai",
-    desc: "Ce soir ou lors de vos déplacements — échangez et confirmez chaque rendez-vous.",
-  },
-];
-
-const PLATFORM_FEATURES = [
-  { icon: Users, title: "Près de moi", desc: "Rencontrez des personnes compatibles dans votre ville et votre pays." },
-  { icon: Globe2, title: "Monde entier", desc: "Explorez des profils partout dans le monde — gratuit pour tous." },
-  { icon: Moon, title: "Ce soir", desc: "Qui est disponible pour une rencontre aujourd'hui, où qu'ils soient." },
-  { icon: Plane, title: "Mode Voyage", desc: "Planifiez un séjour et connectez-vous avec des personnes sur place." },
-  { icon: Heart, title: "Clic-Match", desc: "Likez, matchez, échangez — une expérience fluide type JALF, en mieux." },
-  { icon: Calendar, title: "Rencontres réelles", desc: "Proposez un rendez-vous et confirmez mutuellement chaque rencontre." },
-];
+import {
+  LANDING_DEMO_PROFILES,
+  LANDING_HERO_IMAGE,
+  LANDING_PILLARS,
+  LANDING_STEPS,
+  LANDING_TESTIMONIALS,
+  LANDING_TRUST,
+  TAGLINE,
+  TAGLINE_SECONDARY,
+  TAGLINE_TERTIARY,
+} from "@/lib/constants";
+import { WORLD_FLAGS } from "@/lib/world-countries";
 
 export default function LandingPage() {
   return (
@@ -64,36 +40,46 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="relative overflow-hidden px-4 py-16 md:px-8 md:py-28">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-[#6b1d3a]/15 blur-[100px]" />
-        <div className="relative mx-auto max-w-5xl text-center animate-fade-in">
+      {/* Hero — style JALF, identité Ultimate */}
+      <section className="relative min-h-[85vh] overflow-hidden">
+        <Image
+          src={LANDING_HERO_IMAGE}
+          alt=""
+          fill
+          priority
+          className="object-cover object-center"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0b]/70 via-[#0a0a0b]/85 to-[#0a0a0b]" />
+        <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 py-20 text-center md:px-8 md:py-28">
           <Logo size="lg" />
           <p className="section-label mt-8">{TAGLINE}</p>
-          <h1 className="mt-4 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl md:text-7xl">
-            {TAGLINE_SECONDARY}
+          <h1 className="mt-4 max-w-3xl font-display text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-6xl">
+            La plateforme sociale de rencontre dédiée à votre plaisir
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-[#f5f0e8]/90 md:text-xl">
-            {TAGLINE_TERTIARY}
-          </p>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[#9a8f8a] md:text-lg">
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#f5f0e8]/90 md:text-xl">
             {TAGLINE_SECONDARY}
           </p>
+          <p className="mt-3 text-base text-[#c9a962]">{TAGLINE_TERTIARY}</p>
           <p className="mt-6 text-2xl tracking-widest">{WORLD_FLAGS}</p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
             <Link href="/inscription">
               <Button variant="gold" size="lg" className="w-full min-w-[220px] sm:w-auto">
-                Créer mon profil <ArrowRight className="h-5 w-5" />
+                Inscription gratuite <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
             <Link href="/connexion">
               <Button variant="outline" size="lg" className="w-full min-w-[220px] sm:w-auto">
-                Découvrir Ultimate
+                Connexion
               </Button>
             </Link>
           </div>
         </div>
+      </section>
 
-        <div className="relative mx-auto mt-14 max-w-6xl">
+      {/* Profils demo */}
+      <section className="border-t border-white/[0.06] px-4 py-12 md:px-8">
+        <div className="mx-auto max-w-6xl">
           <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-4 md:overflow-visible">
             {LANDING_DEMO_PROFILES.map((p) => (
               <div key={p.name} className="premium-card w-[220px] shrink-0 snap-center overflow-hidden md:w-auto">
@@ -112,34 +98,57 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* 5+ piliers JALF */}
       <section className="border-t border-white/[0.06] px-4 py-16 md:px-8 md:py-24">
-        <div className="mx-auto max-w-5xl">
-          <p className="section-label text-center">Plateforme adulte mondiale</p>
+        <div className="mx-auto max-w-6xl">
+          <p className="section-label text-center">Tout pour connecter, jouer et explorer</p>
           <h2 className="mt-3 text-center font-display text-3xl font-semibold md:text-4xl">
-            Près de moi. Monde entier. Ce soir. En voyage.
+            Une expérience adulte complète
           </h2>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {PLATFORM_FEATURES.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="premium-card p-8">
-                <div className="inline-flex rounded-full bg-[#6b1d3a]/30 p-3 ring-1 ring-[#6b1d3a]/40">
-                  <Icon className="h-7 w-7 text-[#c9a962]" />
+          <div className="mt-12 grid gap-8 md:grid-cols-2">
+            {LANDING_PILLARS.map((pillar) => (
+              <Link
+                key={pillar.id}
+                href={pillar.href}
+                className="premium-card group overflow-hidden transition hover:ring-1 hover:ring-[#c9a962]/30"
+              >
+                <div className="relative aspect-[16/9]">
+                  <Image
+                    src={pillar.image}
+                    alt=""
+                    fill
+                    className="object-cover transition duration-500 group-hover:scale-105"
+                    sizes="(max-width:768px) 100vw, 50vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0b] via-[#0a0a0b]/40 to-transparent" />
+                  <div className="absolute bottom-0 p-6">
+                    <span className="text-xs font-medium uppercase tracking-wider text-[#c9a962]">
+                      {pillar.subtitle}
+                      {!pillar.live && " · Bientôt"}
+                    </span>
+                    <h3 className="mt-1 font-display text-2xl font-semibold">{pillar.title}</h3>
+                  </div>
                 </div>
-                <h3 className="mt-5 font-display text-xl font-semibold">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-[#9a8f8a]">{desc}</p>
-              </div>
+                <p className="p-6 text-sm leading-relaxed text-[#9a8f8a]">{pillar.desc}</p>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
+      {/* Comment ça marche */}
       <section className="border-t border-white/[0.06] px-4 py-16 md:px-8 md:py-24">
         <div className="mx-auto max-w-5xl">
-          <p className="section-label text-center">Comment ça marche</p>
-          <h2 className="mt-3 text-center font-display text-3xl font-semibold md:text-4xl">Trois étapes, une expérience fluide</h2>
+          <p className="section-label text-center">Comment ça fonctionne</p>
+          <h2 className="mt-3 text-center font-display text-3xl font-semibold md:text-4xl">
+            Trois étapes vers vos rencontres
+          </h2>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {STEPS.map(({ step, title, desc }) => (
-              <div key={step} className="premium-card p-8">
-                <span className="font-display text-4xl font-bold text-[#6b1d3a]/60">{step}</span>
+            {LANDING_STEPS.map(({ step, title, desc }) => (
+              <div key={step} className="premium-card p-8 text-center md:text-left">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#6b1d3a]/40 font-display text-xl font-bold text-[#c9a962]">
+                  {step}
+                </span>
                 <h3 className="mt-4 font-display text-xl font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#9a8f8a]">{desc}</p>
               </div>
@@ -148,17 +157,57 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Confiance — grille 6 points JALF */}
+      <section className="border-t border-white/[0.06] px-4 py-16 md:px-8 md:py-24">
+        <div className="mx-auto max-w-5xl">
+          <p className="section-label text-center">Discrétion & sécurité</p>
+          <h2 className="mt-3 text-center font-display text-3xl font-semibold md:text-4xl">
+            Votre vie privée, notre priorité
+          </h2>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {LANDING_TRUST.map(({ title, desc }) => (
+              <div key={title} className="premium-card p-6">
+                <Shield className="h-6 w-6 text-[#c9a962]" />
+                <h3 className="mt-3 font-display text-lg font-semibold">{title}</h3>
+                <p className="mt-2 text-sm text-[#9a8f8a]">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Témoignages */}
+      <section className="border-t border-white/[0.06] px-4 py-16 md:px-8 md:py-24">
+        <div className="mx-auto max-w-6xl">
+          <p className="section-label text-center">Leurs désirs sont comblés</p>
+          <h2 className="mt-3 text-center font-display text-3xl font-semibold md:text-4xl">
+            Une communauté audacieuse
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-sm text-[#9a8f8a]">
+            Témoignages fictifs illustratifs — la confidentialité de nos membres est primordiale.
+          </p>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2">
+            {LANDING_TESTIMONIALS.map(({ quote, author, age }) => (
+              <blockquote key={author} className="premium-card p-8">
+                <p className="text-sm italic leading-relaxed text-[#f5f0e8]/90">&ldquo;{quote}&rdquo;</p>
+                <footer className="mt-4 text-sm font-medium text-[#c9a962]">
+                  {author} · {age} ans
+                </footer>
+              </blockquote>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Premium */}
       <section className="border-t border-white/[0.06] px-4 py-16 md:px-8 md:py-24">
         <div className="premium-card mx-auto max-w-4xl overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="p-8 md:p-12">
               <Crown className="h-10 w-10 text-[#c9a962]" />
-              <h2 className="mt-4 font-display text-3xl font-semibold">ULTIMATE Premium</h2>
+              <h2 className="mt-4 font-display text-3xl font-semibold">Priorisez votre plaisir</h2>
               <p className="mt-3 text-sm leading-relaxed text-[#9a8f8a]">
-                Monde entier gratuit. Premium débloque le Voyage, l&apos;Incognito, la recherche avancée et VIP Gold.
-              </p>
-              <p className="mt-4 text-2xl font-semibold text-[#c9a962]">
-                À partir de 19,99 $ <span className="text-sm font-normal text-[#9a8f8a]">CAD / mois</span>
+                Monde entier gratuit. Premium débloque le Voyage, l&apos;Incognito, les vidéos privées et VIP Gold.
               </p>
               <Link href="/premium" className="mt-6 inline-block">
                 <Button variant="gold">Explorer Premium</Button>
@@ -166,7 +215,7 @@ export default function LandingPage() {
             </div>
             <div className="relative min-h-[240px] bg-gradient-to-br from-[#6b1d3a]/30 to-[#1a1218] p-8 md:p-12">
               <ul className="space-y-3 text-sm">
-                {["Monde entier gratuit", "Mode Voyage Premium", "Visiteurs & Incognito", "VIP Gold — visibilité max"].map((f) => (
+                {["Monde entier gratuit", "Fil & profils couples", "Albums photos + vidéos", "VIP Gold — visibilité max"].map((f) => (
                   <li key={f} className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-[#c9a962]" />
                     {f}
@@ -178,22 +227,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-t border-white/[0.06] px-4 py-16 md:px-8">
-        <div className="premium-card mx-auto max-w-3xl p-8 text-center md:p-12">
-          <Shield className="mx-auto h-10 w-10 text-[#c9a962]" />
-          <h2 className="mt-4 font-display text-2xl font-semibold md:text-3xl">Confiance & sécurité</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#9a8f8a]">
-            Signalement, blocage, consentement explicite pour chaque rendez-vous.
-            Votre ville et pays sont visibles — jamais votre adresse exacte.
-            Plateforme adulte réservée aux 18 ans et plus. Discrétion, pseudonyme et contrôle de votre visibilité.
-          </p>
-        </div>
-      </section>
-
+      {/* CTA final */}
       <section className="border-t border-white/[0.06] px-4 py-16 text-center md:px-8 md:py-20">
-        <MessageCircle className="mx-auto h-8 w-8 text-[#c9a962]" />
-        <h2 className="mt-4 font-display text-3xl font-bold md:text-4xl">Prêt à rencontrer ?</h2>
-        <p className="mt-2 text-[#9a8f8a]">Rejoignez ULTIMATE — partout dans le monde, sans tabou.</p>
+        <h2 className="font-display text-3xl font-bold md:text-4xl">Oubliez les tabous</h2>
+        <p className="mx-auto mt-3 max-w-lg text-[#9a8f8a]">
+          Donnez-vous la chance de t&apos;épanouir. Ici, tout ce qui compte, c&apos;est le plaisir — partout dans le monde.
+        </p>
         <Link href="/inscription" className="mt-8 inline-block">
           <Button variant="primary" size="lg">Créer mon profil gratuitement</Button>
         </Link>
@@ -204,7 +243,7 @@ export default function LandingPage() {
           <Link href="/conditions" className="transition hover:text-[#f5f0e8]">Conditions</Link>
           <Link href="/confidentialite" className="transition hover:text-[#f5f0e8]">Confidentialité</Link>
         </div>
-        <p>© 2026 ULTIMATE. Tous droits réservés. · {WORLD_FLAGS}</p>
+        <p>© 2026 ULTIMATE. Tous droits réservés. · 18+ · {WORLD_FLAGS}</p>
       </footer>
     </div>
   );

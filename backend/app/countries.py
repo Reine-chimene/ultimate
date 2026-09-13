@@ -12,13 +12,37 @@ class CountryInfo:
     default_timezone: str
 
 
+COUNTRY_DATA: list[tuple[str, str, str, str, str]] = [
+    ("CA", "Canada", "Canada", "🇨🇦", "America/Toronto"),
+    ("US", "United States", "États-Unis", "🇺🇸", "America/New_York"),
+    ("MX", "Mexico", "Mexique", "🇲🇽", "America/Mexico_City"),
+    ("BR", "Brazil", "Brésil", "🇧🇷", "America/Sao_Paulo"),
+    ("FR", "France", "France", "🇫🇷", "Europe/Paris"),
+    ("BE", "Belgium", "Belgique", "🇧🇪", "Europe/Brussels"),
+    ("CH", "Switzerland", "Suisse", "🇨🇭", "Europe/Zurich"),
+    ("LU", "Luxembourg", "Luxembourg", "🇱🇺", "Europe/Luxembourg"),
+    ("GB", "United Kingdom", "Royaume-Uni", "🇬🇧", "Europe/London"),
+    ("ES", "Spain", "Espagne", "🇪🇸", "Europe/Madrid"),
+    ("DE", "Germany", "Allemagne", "🇩🇪", "Europe/Berlin"),
+    ("IT", "Italy", "Italie", "🇮🇹", "Europe/Rome"),
+    ("PT", "Portugal", "Portugal", "🇵🇹", "Europe/Lisbon"),
+    ("NL", "Netherlands", "Pays-Bas", "🇳🇱", "Europe/Amsterdam"),
+    ("MC", "Monaco", "Monaco", "🇲🇨", "Europe/Monaco"),
+    ("GP", "Guadeloupe", "Guadeloupe", "🇬🇵", "America/Guadeloupe"),
+    ("MQ", "Martinique", "Martinique", "🇲🇶", "America/Martinique"),
+    ("CM", "Cameroon", "Cameroun", "🇨🇲", "Africa/Douala"),
+    ("CI", "Côte d'Ivoire", "Côte d'Ivoire", "🇨🇮", "Africa/Abidjan"),
+    ("SN", "Senegal", "Sénégal", "🇸🇳", "Africa/Dakar"),
+    ("MA", "Morocco", "Maroc", "🇲🇦", "Africa/Casablanca"),
+    ("TN", "Tunisia", "Tunisie", "🇹🇳", "Africa/Tunis"),
+    ("DZ", "Algeria", "Algérie", "🇩🇿", "Africa/Algiers"),
+    ("AE", "UAE", "Émirats arabes unis", "🇦🇪", "Asia/Dubai"),
+    ("AU", "Australia", "Australie", "🇦🇺", "Australia/Sydney"),
+]
+
 COUNTRIES: dict[str, CountryInfo] = {
-    "CA": CountryInfo("CA", "Canada", "Canada", "🇨🇦", "America/Toronto"),
-    "FR": CountryInfo("FR", "France", "France", "🇫🇷", "Europe/Paris"),
-    "US": CountryInfo("US", "United States", "États-Unis", "🇺🇸", "America/New_York"),
-    "GB": CountryInfo("GB", "United Kingdom", "Royaume-Uni", "🇬🇧", "Europe/London"),
-    "BE": CountryInfo("BE", "Belgium", "Belgique", "🇧🇪", "Europe/Brussels"),
-    "CM": CountryInfo("CM", "Cameroon", "Cameroun", "🇨🇲", "Africa/Douala"),
+    code: CountryInfo(code, name, name_fr, flag, tz)
+    for code, name, name_fr, flag, tz in COUNTRY_DATA
 }
 
 

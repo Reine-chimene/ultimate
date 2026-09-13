@@ -117,6 +117,117 @@ export const INTEREST_SUGGESTIONS = [
   "Yoga",
 ];
 
+/** Illustrations stock — style JALF, identité Ultimate (Unsplash). */
+export const LANDING_HERO_IMAGE =
+  "https://images.unsplash.com/photo-1516589178581-6d783895a9e2?w=1600&q=80";
+
+export const LANDING_PILLARS = [
+  {
+    id: "tonight",
+    title: "Rencontres immédiates",
+    subtitle: "Ce soir",
+    desc: "Changez votre statut à « Disponible » et voyez qui est prêt·e à vous rencontrer maintenant, près de chez vous ou en voyage.",
+    href: "/ce-soir",
+    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80",
+    live: true,
+  },
+  {
+    id: "feed",
+    title: "Fil communautaire",
+    subtitle: "Partage & connexion",
+    desc: "Publiez, commentez, aimez — une communauté adulte ouverte d'esprit qui partage ses envies sans filtre.",
+    href: "/fil",
+    image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80",
+    live: true,
+  },
+  {
+    id: "messages",
+    title: "Messagerie privée",
+    subtitle: "DM sans tabou",
+    desc: "Chats privés, albums photos et vidéos. Amenez votre chimie au niveau supérieur en toute discrétion.",
+    href: "/messages",
+    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&q=80",
+    live: true,
+  },
+  {
+    id: "private",
+    title: "Contenu privé",
+    subtitle: "Photos & vidéos",
+    desc: "Albums privés avec contrôle d'accès. Partagez vos moments les plus intimes avec qui vous choisissez.",
+    href: "/mon-profil/albums-prives",
+    image: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&q=80",
+    live: true,
+  },
+  {
+    id: "couples",
+    title: "Profils couples",
+    subtitle: "Duo & fantaisies",
+    desc: "Un compte, deux personnes. Sélectionnez vos fantaisies et préférences adultes dès l'inscription.",
+    href: "/inscription",
+    image: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&q=80",
+    live: true,
+  },
+  {
+    id: "live",
+    title: "Ultimate Live",
+    subtitle: "Webcams · Phase 3",
+    desc: "Salons live et appels vidéo — bientôt disponible pour les membres Premium et VIP Gold.",
+    href: "/premium",
+    image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&q=80",
+    live: false,
+  },
+] as const;
+
+export const LANDING_TRUST = [
+  { title: "Navigation discrète", desc: "Contrôlez qui voit votre activité sur la plateforme." },
+  { title: "Contenu privé", desc: "Vous décidez qui accède à vos photos et vidéos." },
+  { title: "Expérience anonyme", desc: "Votre vie privée reste séparée de votre vie ULTIMATE." },
+  { title: "Identité protégée", desc: "Pseudonyme public — votre vrai nom reste privé." },
+  { title: "Compte indépendant", desc: "Aucun lien avec vos réseaux sociaux personnels." },
+  { title: "Paramètres de confidentialité", desc: "Visibilité en ligne, incognito et visiteurs à votre guise." },
+] as const;
+
+export const LANDING_TESTIMONIALS = [
+  {
+    quote: "Inscrite en revenant du travail, j'avais une connexion le soir même. Ici, les gens savent ce qu'ils veulent.",
+    author: "Luna_MTL",
+    age: 27,
+  },
+  {
+    quote: "Ma copine et moi cherchions à pimenter nos soirées. Profil couple en 24h, communauté respectueuse et ouverte.",
+    author: "DuoLibre",
+    age: 34,
+  },
+  {
+    quote: "Le Monde entier gratuit, c'est réel. J'ai exploré des profils à Paris, Montréal et Dakar sans payer.",
+    author: "Voyageur_91",
+    age: 35,
+  },
+  {
+    quote: "Le fil communautaire et les albums privés — enfin une app adulte complète, pas juste du swipe.",
+    author: "MrSmooth",
+    age: 38,
+  },
+] as const;
+
+export const LANDING_STEPS = [
+  {
+    step: "1",
+    title: "Inscrivez-vous gratuitement",
+    desc: "Quelques clics, sans carte de crédit. Célibataire ou couple — choisissez votre type de profil.",
+  },
+  {
+    step: "2",
+    title: "Complétez votre profil",
+    desc: "Photos, bio, fantaisies et préférences. Votre pseudonyme, votre rythme.",
+  },
+  {
+    step: "3",
+    title: "Explorez le monde",
+    desc: "Découvrir, Fil, Ce soir, Monde entier — connectez-vous avec des personnes qui partagent vos envies.",
+  },
+] as const;
+
 export const LANDING_DEMO_PROFILES = [
   {
     name: "Sarah",

@@ -1,19 +1,8 @@
-export interface CountryOption {
-  code: string;
-  name: string;
-  nameFr: string;
-  flag: string;
-  defaultTimezone: string;
-}
+import { WORLD_COUNTRIES, WORLD_FLAGS, type WorldCountry } from "./world-countries";
 
-export const COUNTRIES: CountryOption[] = [
-  { code: "CA", name: "Canada", nameFr: "Canada", flag: "🇨🇦", defaultTimezone: "America/Toronto" },
-  { code: "FR", name: "France", nameFr: "France", flag: "🇫🇷", defaultTimezone: "Europe/Paris" },
-  { code: "US", name: "United States", nameFr: "États-Unis", flag: "🇺🇸", defaultTimezone: "America/New_York" },
-  { code: "GB", name: "United Kingdom", nameFr: "Royaume-Uni", flag: "🇬🇧", defaultTimezone: "Europe/London" },
-  { code: "BE", name: "Belgium", nameFr: "Belgique", flag: "🇧🇪", defaultTimezone: "Europe/Brussels" },
-  { code: "CM", name: "Cameroon", nameFr: "Cameroun", flag: "🇨🇲", defaultTimezone: "Africa/Douala" },
-];
+export type CountryOption = WorldCountry;
+
+export const COUNTRIES: CountryOption[] = WORLD_COUNTRIES;
 
 export function getCountry(code: string): CountryOption {
   return (
@@ -23,6 +12,7 @@ export function getCountry(code: string): CountryOption {
       nameFr: code.toUpperCase(),
       flag: "🌍",
       defaultTimezone: "UTC",
+      region: "europe",
     }
   );
 }
@@ -32,7 +22,7 @@ export function locationLabel(city: string, countryCode: string): string {
   return `${city}, ${c.nameFr} ${c.flag}`;
 }
 
-export const WORLD_FLAGS = COUNTRIES.map((c) => c.flag).join(" ");
+export { WORLD_FLAGS };
 
 export function defaultTimezoneForCountry(countryCode: string): string {
   return getCountry(countryCode).defaultTimezone;

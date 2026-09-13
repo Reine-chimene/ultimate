@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Edit, Eye, Lock, MapPin, Settings, SlidersHorizontal } from "lucide-react";
+import { Edit, Eye, Heart, Lock, MapPin, Newspaper, Settings, SlidersHorizontal, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Profile, ProfileCompletion } from "@/types";
@@ -67,7 +67,18 @@ export default function MyProfilePage() {
           <div className="absolute bottom-0 p-6">
             <h2 className="font-display text-4xl font-bold">
               {profileDisplayName({ display_name: profile.display_name, first_name: user.first_name })}, {calculateAge(user.date_of_birth)}
+              {(profile.account_type ?? user.account_type) === "couple" && (
+                <span className="ml-2 align-middle rounded-full bg-[#6b1d3a]/60 px-2.5 py-0.5 text-sm font-medium text-[#c9a962]">
+                  Couple
+                </span>
+              )}
             </h2>
+            {(profile.account_type ?? user.account_type) === "couple" && profile.partner_first_name && (
+              <p className="mt-1 text-sm text-[#c9a962]">
+                & {profile.partner_first_name}
+                {profile.partner_gender ? ` · ${GENDER_LABELS[profile.partner_gender]}` : ""}
+              </p>
+            )}
             <div className="mt-2 flex items-center gap-2 text-[#9a8f8a]">
               <MapPin className="h-4 w-4" />
               {country.flag} {user.city}, {country.nameFr}
@@ -77,6 +88,20 @@ export default function MyProfilePage() {
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <Link href="/fil" className="premium-card flex items-center gap-3 p-4 transition hover:bg-white/[0.03]">
+          <Newspaper className="h-5 w-5 text-[#c9a962]" />
+          <div>
+            <p className="font-medium">Fil communautaire</p>
+            <p className="text-sm text-[#9a8f8a]">Publications, likes et commentaires</p>
+          </div>
+        </Link>
+        <Link href="/mon-profil/modifier" className="premium-card flex items-center gap-3 p-4 transition hover:bg-white/[0.03]">
+          <Heart className="h-5 w-5 text-[#c9a962]" />
+          <div>
+            <p className="font-medium">Fantaisies & couple</p>
+            <p className="text-sm text-[#9a8f8a]">Préférences adultes · profil duo</p>
+          </div>
+        </Link>
         <Link href="/visiteurs" className="premium-card flex items-center gap-3 p-4 transition hover:bg-white/[0.03]">
           <Eye className="h-5 w-5 text-[#c9a962]" />
           <div>
@@ -135,6 +160,18 @@ export default function MyProfilePage() {
           </div>
         ) : (
           <p className="mt-4 text-sm text-[#9a8f8a]">Ajoutez vos centres d&apos;intérêt.</p>
+        )}
+        {profile.fantasies && profile.fantasies.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[#c9a962]">
+              <Users className="h-3.5 w-3.5" /> Fantaisies & préférences
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {profile.fantasies.map((f) => (
+                <span key={f.id} className="rounded-full bg-[#6b1d3a]/30 px-3 py-1 text-sm text-[#f5f0e8]">{f.tag}</span>
+              ))}
+            </div>
+          </div>
         )}
         <Link href="/mon-profil/modifier" className="mt-5 inline-block">
           <Button variant="outline" size="sm">Compléter mon profil</Button>
