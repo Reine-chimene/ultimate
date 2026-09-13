@@ -21,8 +21,14 @@ class RelationshipIntention(str, enum.Enum):
 
 class DiscoveryMode(str, enum.Enum):
     NEAR_ME = "near_me"
-    INTERNATIONAL = "international"
+    WORLDWIDE = "worldwide"
     TRAVEL = "travel"
+
+    @classmethod
+    def _missing_(cls, value: object):
+        if value == "international":
+            return cls.WORLDWIDE
+        return None
 
 
 class MeetingStatus(str, enum.Enum):

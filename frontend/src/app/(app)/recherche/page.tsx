@@ -181,7 +181,7 @@ export default function SearchPage() {
 
       <p className="mt-8 text-center text-xs text-[#9a8f8a]">
         <Link href="/premium" className="text-[#c9a962] hover:underline">Premium</Link>
-        {" "}débloque la recherche avancée et l&apos;international.
+        {" "}débloque la recherche avancée, le mode Voyage et le mode Incognito.
       </p>
     </div>
   );

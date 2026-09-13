@@ -32,6 +32,9 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    preferred_language: Mapped[str] = mapped_column(
+        String(5), nullable=False, default="fr", index=True
+    )
     terms_accepted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

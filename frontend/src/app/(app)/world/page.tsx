@@ -34,7 +34,7 @@ export default function WorldPage() {
         {countries.map((c) => (
           <Link
             key={c.code}
-            href={`/decouvrir?country=${c.code}&mode=international`}
+            href={`/decouvrir?country=${c.code}&mode=worldwide`}
             className="premium-card group p-6 transition hover:ring-1 hover:ring-[#c9a962]/30"
           >
             <div className="flex items-start justify-between">

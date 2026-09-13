@@ -72,11 +72,8 @@ class DiscoveryService:
         if my_profile is None:
             raise ValueError("Profil introuvable")
 
-        premium = PremiumService(self.db)
-        if filters.mode == DiscoveryMode.INTERNATIONAL:
-            await premium.require_premium(current_user, "découverte internationale")
-        elif filters.mode == DiscoveryMode.TRAVEL:
-            await premium.require_premium(current_user, "mode voyage")
+        if filters.mode == DiscoveryMode.TRAVEL:
+            await PremiumService(self.db).require_premium(current_user, "mode voyage")
 
         excluded_ids = await self._get_excluded_user_ids(current_user.id)
         my_age = calculate_age(current_user.date_of_birth)
@@ -96,8 +93,8 @@ class DiscoveryService:
             query = query.where(func.upper(User.country) == filters.country.upper())
         elif filters.mode == DiscoveryMode.NEAR_ME:
             query = query.where(func.upper(User.country) == current_user.country.upper())
-        elif filters.mode == DiscoveryMode.INTERNATIONAL:
-            query = query.where(func.upper(User.country) != current_user.country.upper())
+        elif filters.mode == DiscoveryMode.WORLDWIDE:
+            pass
         elif filters.mode == DiscoveryMode.TRAVEL:
             travel = await self._get_active_travel(current_user.id)
             if travel:

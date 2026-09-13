@@ -81,11 +81,8 @@ class SearchService:
         if advanced and not await self.premium.can_use_advanced_search(current_user):
             raise ValueError("La recherche avancée est réservée aux membres Premium.")
 
-        if filters.mode in (DiscoveryMode.INTERNATIONAL, DiscoveryMode.TRAVEL):
-            if filters.mode == DiscoveryMode.INTERNATIONAL:
-                await self.premium.require_premium(current_user, "recherche internationale")
-            else:
-                await self.premium.require_premium(current_user, "mode voyage")
+        if filters.mode == DiscoveryMode.TRAVEL:
+            await self.premium.require_premium(current_user, "mode voyage")
 
         excluded_ids = await self._excluded_ids(current_user.id)
         my_age = calculate_age(current_user.date_of_birth)
@@ -105,8 +102,8 @@ class SearchService:
             query = query.where(func.upper(User.country) == filters.country.upper())
         elif filters.mode == DiscoveryMode.NEAR_ME:
             query = query.where(func.upper(User.country) == current_user.country.upper())
-        elif filters.mode == DiscoveryMode.INTERNATIONAL:
-            query = query.where(func.upper(User.country) != current_user.country.upper())
+        elif filters.mode == DiscoveryMode.WORLDWIDE:
+            pass
         elif filters.mode == DiscoveryMode.TRAVEL:
             travel = await self._get_active_travel(current_user.id)
             if travel:

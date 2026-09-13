@@ -10,6 +10,7 @@ from jose import JWTError
 from app.auth import create_access_token, create_refresh_token, hash_password, verify_password
 from app.auth.jwt import verify_refresh_token
 from app.countries import default_timezone_for_country
+from app.languages import DEFAULT_LANGUAGE
 from app.models.auth_tokens import PasswordResetToken
 from app.models.enums import Gender, RelationshipIntention, SubscriptionPlan, SubscriptionStatus
 from app.models.profile import Profile
@@ -44,6 +45,7 @@ class AuthService:
             city=data.city.strip(),
             country=country,
             timezone=timezone,
+            preferred_language=data.preferred_language or DEFAULT_LANGUAGE,
             onboarding_completed=False,
         )
         self.db.add(user)

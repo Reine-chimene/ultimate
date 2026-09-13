@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { TAGLINE } from "@/lib/constants";
 import { COUNTRIES, defaultTimezoneForCountry } from "@/lib/countries";
+import { SUPPORTED_LANGUAGES, type PreferredLanguage } from "@/lib/languages";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -23,6 +24,7 @@ export default function RegisterPage() {
     city: "",
     country: "CA",
     timezone: "America/Toronto",
+    preferred_language: "fr" as PreferredLanguage,
     terms_accepted: false,
     is_adult: false,
   });
@@ -70,13 +72,24 @@ export default function RegisterPage() {
           <Logo showTagline />
           <p className="section-label mt-6">{TAGLINE}</p>
           <h1 className="mt-2 font-display text-2xl font-semibold">Créer un compte</h1>
-          <p className="mt-1 text-sm text-[#9a8f8a]">Réservé aux personnes de 18 ans et plus</p>
+          <p className="mt-1 text-sm text-[#9a8f8a]">
+            Plateforme adulte · 18 ans et plus · Discrétion garantie
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <Input label="Prénom" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} required />
           <Input label="Courriel" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
           <Input label="Mot de passe" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
+          <Select
+            label="Quelle langue préférez-vous ?"
+            value={form.preferred_language}
+            onChange={(e) => setForm({ ...form, preferred_language: e.target.value as PreferredLanguage })}
+          >
+            {SUPPORTED_LANGUAGES.map((lang) => (
+              <option key={lang.code} value={lang.code}>{lang.label}</option>
+            ))}
+          </Select>
           <Input label="Date de naissance" type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} required />
           <Select label="Genre" value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}>
             <option value="female">Femme</option>

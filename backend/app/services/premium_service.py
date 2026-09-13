@@ -40,8 +40,11 @@ class PremiumService:
     async def can_use_advanced_search(self, user: User) -> bool:
         return await self.is_premium(user)
 
+    async def can_use_worldwide_discovery(self, user: User) -> bool:
+        return True
+
     async def can_use_international_discovery(self, user: User) -> bool:
-        return await self.is_premium(user)
+        return await self.can_use_worldwide_discovery(user)
 
     async def can_use_travel_discovery(self, user: User) -> bool:
         return await self.is_premium(user)

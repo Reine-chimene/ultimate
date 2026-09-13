@@ -36,11 +36,12 @@ const STEPS = [
   },
 ];
 
-const INTERNATIONAL_FEATURES = [
-  { icon: Users, title: "Découverte locale", desc: "Rencontrez des personnes près de chez vous, dans votre ville et votre pays." },
-  { icon: Globe2, title: "Découverte internationale", desc: "Explorez des profils au-delà des frontières, sans limites géographiques." },
+const PLATFORM_FEATURES = [
+  { icon: Users, title: "Près de moi", desc: "Rencontrez des personnes compatibles dans votre ville et votre pays." },
+  { icon: Globe2, title: "Monde entier", desc: "Explorez des profils partout dans le monde — gratuit pour tous." },
   { icon: Moon, title: "Ce soir", desc: "Qui est disponible pour une rencontre aujourd'hui, où qu'ils soient." },
   { icon: Plane, title: "Mode Voyage", desc: "Planifiez un séjour et connectez-vous avec des personnes sur place." },
+  { icon: Heart, title: "Clic-Match", desc: "Likez, matchez, échangez — une expérience fluide type JALF, en mieux." },
   { icon: Calendar, title: "Rencontres réelles", desc: "Proposez un rendez-vous et confirmez mutuellement chaque rencontre." },
 ];
 
@@ -113,12 +114,12 @@ export default function LandingPage() {
 
       <section className="border-t border-white/[0.06] px-4 py-16 md:px-8 md:py-24">
         <div className="mx-auto max-w-5xl">
-          <p className="section-label text-center">Rencontrez au-delà des frontières</p>
+          <p className="section-label text-center">Plateforme adulte mondiale</p>
           <h2 className="mt-3 text-center font-display text-3xl font-semibold md:text-4xl">
-            Local. International. Ce soir. En voyage.
+            Près de moi. Monde entier. Ce soir. En voyage.
           </h2>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {INTERNATIONAL_FEATURES.map(({ icon: Icon, title, desc }) => (
+            {PLATFORM_FEATURES.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="premium-card p-8">
                 <div className="inline-flex rounded-full bg-[#6b1d3a]/30 p-3 ring-1 ring-[#6b1d3a]/40">
                   <Icon className="h-7 w-7 text-[#c9a962]" />
@@ -154,7 +155,7 @@ export default function LandingPage() {
               <Crown className="h-10 w-10 text-[#c9a962]" />
               <h2 className="mt-4 font-display text-3xl font-semibold">ULTIMATE Premium</h2>
               <p className="mt-3 text-sm leading-relaxed text-[#9a8f8a]">
-                Découverte internationale, Mode Voyage, filtres avancés et visibilité prioritaire.
+                Monde entier gratuit. Premium débloque le Voyage, l&apos;Incognito, la recherche avancée et VIP Gold.
               </p>
               <p className="mt-4 text-2xl font-semibold text-[#c9a962]">
                 À partir de 19,99 $ <span className="text-sm font-normal text-[#9a8f8a]">CAD / mois</span>
@@ -165,7 +166,7 @@ export default function LandingPage() {
             </div>
             <div className="relative min-h-[240px] bg-gradient-to-br from-[#6b1d3a]/30 to-[#1a1218] p-8 md:p-12">
               <ul className="space-y-3 text-sm">
-                {["Découverte internationale", "Mode Voyage", "Voir qui vous a aimé", "Filtres « Ce soir » avancés"].map((f) => (
+                {["Monde entier gratuit", "Mode Voyage Premium", "Visiteurs & Incognito", "VIP Gold — visibilité max"].map((f) => (
                   <li key={f} className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-[#c9a962]" />
                     {f}
@@ -184,7 +185,7 @@ export default function LandingPage() {
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#9a8f8a]">
             Signalement, blocage, consentement explicite pour chaque rendez-vous.
             Votre ville et pays sont visibles — jamais votre adresse exacte.
-            Réservé aux personnes de 18 ans et plus.
+            Plateforme adulte réservée aux 18 ans et plus. Discrétion, pseudonyme et contrôle de votre visibilité.
           </p>
         </div>
       </section>
@@ -192,7 +193,7 @@ export default function LandingPage() {
       <section className="border-t border-white/[0.06] px-4 py-16 text-center md:px-8 md:py-20">
         <MessageCircle className="mx-auto h-8 w-8 text-[#c9a962]" />
         <h2 className="mt-4 font-display text-3xl font-bold md:text-4xl">Prêt à rencontrer ?</h2>
-        <p className="mt-2 text-[#9a8f8a]">Rejoignez ULTIMATE — local ou international.</p>
+        <p className="mt-2 text-[#9a8f8a]">Rejoignez ULTIMATE — partout dans le monde, sans tabou.</p>
         <Link href="/inscription" className="mt-8 inline-block">
           <Button variant="primary" size="lg">Créer mon profil gratuitement</Button>
         </Link>

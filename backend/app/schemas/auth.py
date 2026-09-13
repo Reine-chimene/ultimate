@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from app.languages import DEFAULT_LANGUAGE, is_supported_language
 from app.models.enums import Gender, UserRole
 from app.schemas.common import ORMModel
 
@@ -16,6 +17,7 @@ class RegisterRequest(BaseModel):
     city: str = Field(min_length=2, max_length=100)
     country: str = Field(default="CA", min_length=2, max_length=2)
     timezone: str | None = Field(default=None, max_length=64)
+    preferred_language: str = Field(default=DEFAULT_LANGUAGE, min_length=2, max_length=5)
     terms_accepted: bool
     is_adult: bool
 
@@ -32,6 +34,14 @@ class RegisterRequest(BaseModel):
         if not value:
             raise ValueError("Vous devez avoir 18 ans ou plus")
         return value
+
+    @field_validator("preferred_language")
+    @classmethod
+    def validate_language(cls, value: str) -> str:
+        code = value.lower().strip()
+        if not is_supported_language(code):
+            raise ValueError("Langue non supportée")
+        return code
 
     @field_validator("date_of_birth")
     @classmethod
@@ -80,5 +90,6 @@ class UserResponse(ORMModel):
     role: UserRole
     is_active: bool
     onboarding_completed: bool = False
+    preferred_language: str = DEFAULT_LANGUAGE
     terms_accepted_at: datetime
     created_at: datetime

@@ -48,7 +48,7 @@ export default function AdminDashboardPage() {
         <section className="mt-10">
           <div className="mb-4 flex items-center gap-2">
             <Globe2 className="h-5 w-5 text-[#c9a962]" />
-            <h2 className="font-display text-xl font-semibold">Vue internationale</h2>
+            <h2 className="font-display text-xl font-semibold">Vue mondiale</h2>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {stats.users_by_country.map((c) => (

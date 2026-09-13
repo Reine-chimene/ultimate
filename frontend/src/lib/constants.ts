@@ -2,8 +2,8 @@ import type { DiscoveryMode, Gender, RelationshipIntention } from "@/types";
 
 export const TAGLINE = "MEET. TONIGHT. CONNECT.";
 export const TAGLINE_SECONDARY =
-  "Rencontrez des personnes compatibles, localement ou à l'international, puis connectez-vous avant de vous rencontrer pour de vrai.";
-export const TAGLINE_TERTIARY = "Rencontrer pour de vrai, pas juste swiper.";
+  "La plateforme adulte où le plaisir n'a pas de frontières — rencontrez, connectez-vous, vivez.";
+export const TAGLINE_TERTIARY = "Sans tabou. Sans jugement. Partout dans le monde.";
 
 export const GENDER_LABELS: Record<Gender, string> = {
   male: "Homme",
@@ -23,8 +23,14 @@ export const INTENTION_LABELS: Record<RelationshipIntention, string> = {
 
 export const DISCOVERY_MODE_LABELS: Record<DiscoveryMode, string> = {
   near_me: "Près de moi",
-  international: "International",
+  worldwide: "Monde entier",
   travel: "Voyage",
+};
+
+export const DISCOVERY_MODE_DESCRIPTIONS: Record<DiscoveryMode, string> = {
+  near_me: "Profils dans votre pays",
+  worldwide: "Explorez le monde — gratuit pour tous",
+  travel: "Rencontres à votre destination",
 };
 
 export const PREMIUM_PLANS = [
@@ -33,12 +39,37 @@ export const PREMIUM_PLANS = [
   { id: "6m", durationMonths: 6, price: 69.99, label: "6 mois", popular: false },
 ] as const;
 
-export const PREMIUM_FEATURES = [
-  "Recherche avancée (photo, en ligne, distance)",
-  "Découverte internationale",
-  "Mode Voyage",
-  "25 interactions par jour (vs 5 gratuit)",
+export const FREE_FEATURES = [
+  "Parcourir les profils",
+  "Monde entier gratuit",
+  "Clic-Match (5 interactions/jour)",
+  "Messagerie limitée",
+  "Albums privés (demander l'accès)",
 ];
+
+export const PREMIUM_FEATURES = [
+  "25 interactions par jour",
+  "Messagerie illimitée",
+  "Recherche avancée (photo, en ligne, distance)",
+  "Mode Voyage",
+  "Voir qui vous a visité",
+  "Mode Incognito",
+  "Accès complet aux albums privés",
+];
+
+export const VIP_GOLD_FEATURES = [
+  "Tout Premium inclus",
+  "Visibilité maximale dans les recherches",
+  "Recevoir des messages de tous les membres",
+  "Interactions illimitées",
+  "Salons live (Phase 3)",
+];
+
+export const MEMBERSHIP_TIERS = [
+  { id: "free", name: "Gratuit", price: "0 $", highlight: false, features: FREE_FEATURES },
+  { id: "premium", name: "Premium", price: "19,99 $/mois", highlight: true, features: PREMIUM_FEATURES },
+  { id: "vip", name: "VIP Gold", price: "Sur demande", highlight: false, features: VIP_GOLD_FEATURES },
+] as const;
 
 export const INTEREST_CATEGORY_LABELS: Record<string, string> = {
   outings: "Sorties",

@@ -38,7 +38,7 @@ export function ProfileCard({
   return (
     <article
       className={cn(
-        "premium-card overflow-hidden animate-fade-in group",
+        "premium-card overflow-hidden animate-fade-in group shadow-[0_20px_60px_rgba(107,29,58,0.15)]",
         compact ? "w-full max-w-xs" : "mx-auto w-full max-w-md",
       )}
     >
@@ -144,7 +144,7 @@ export function ProfileCard({
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onLike(); }}
                   aria-label={effectiveLikeLabel}
-                  className="flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-gradient-to-br from-[#6b1d3a] to-[#8b2a4d] shadow-lg shadow-[#6b1d3a]/30 transition hover:scale-105 active:scale-95"
+                  className="flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-gradient-to-br from-[#6b1d3a] to-[#8b2a4d] shadow-lg shadow-[#6b1d3a]/40 ring-2 ring-[#c9a962]/20 transition hover:scale-105 active:scale-95"
                 >
                   <Heart className="h-7 w-7 fill-white text-white" />
                 </button>

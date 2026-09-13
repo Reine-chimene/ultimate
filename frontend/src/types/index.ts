@@ -6,7 +6,8 @@ export type RelationshipIntention =
   | "unsure"
   | "tonight"
   | "travel";
-export type DiscoveryMode = "near_me" | "international" | "travel";
+export type DiscoveryMode = "near_me" | "worldwide" | "travel";
+export type PreferredLanguage = "fr" | "en" | "es" | "pt";
 export type MeetingStatus = "pending" | "accepted" | "rejected" | "cancelled";
 export type UserRole = "user" | "admin";
 export type SubscriptionPlan = "free" | "premium" | "vip";
@@ -60,6 +61,7 @@ export interface User {
   role: UserRole;
   is_active: boolean;
   onboarding_completed: boolean;
+  preferred_language: PreferredLanguage;
   terms_accepted_at: string;
   created_at: string;
 }
