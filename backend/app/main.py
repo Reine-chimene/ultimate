@@ -52,7 +52,9 @@ def create_app() -> FastAPI:
     if settings.storage_backend == "local":
         media_root = Path(settings.media_storage_path)
         media_root.mkdir(parents=True, exist_ok=True)
-        app.mount("/media", StaticFiles(directory=str(media_root)), name="media")
+        public_users = media_root / "users"
+        public_users.mkdir(parents=True, exist_ok=True)
+        app.mount("/media/users", StaticFiles(directory=str(public_users)), name="media_users")
 
     @app.get("/health")
     async def health():

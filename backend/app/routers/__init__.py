@@ -11,6 +11,7 @@ from app.routers import (
     meetings,
     messages,
     notifications,
+    private_albums,
     profiles,
     reports,
     search,
@@ -23,6 +24,7 @@ api_router = APIRouter(prefix="/api/v1")
 
 api_router.include_router(auth.router)
 api_router.include_router(profiles.router)
+api_router.include_router(private_albums.router)
 api_router.include_router(connections.router)
 api_router.include_router(discovery.router)
 api_router.include_router(search.router)

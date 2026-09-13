@@ -5,7 +5,8 @@ import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { Ban, Calendar, Check, Flag, Heart, MapPin, MessageCircle, X } from "lucide-react";
 import { api } from "@/lib/api";
-import type { ConnectionState, PublicProfile } from "@/types";
+import type { ConnectionState, PrivateAlbumSummary, PublicProfile } from "@/types";
+import { PrivateAlbumGallery } from "@/components/private-albums/PrivateAlbumGallery";
 import { Button } from "@/components/ui/Button";
 import { INTENTION_LABELS, GENDER_LABELS } from "@/lib/constants";
 import { LikeButton } from "@/components/profile/LikeButton";
@@ -29,6 +30,7 @@ export default function ProfileDetailPage() {
   const [reportReason, setReportReason] = useState("");
   const [activePhoto, setActivePhoto] = useState(0);
   const [showMatchModal, setShowMatchModal] = useState(false);
+  const [privateAlbums, setPrivateAlbums] = useState<PrivateAlbumSummary[]>([]);
 
   const load = async () => {
     const p = await api.profiles.get(id);
@@ -37,6 +39,12 @@ export default function ProfileDetailPage() {
     setConnectionState((p.connection_state ?? status.state) as ConnectionState);
     setRequestsRemaining(status.requests_remaining);
     if (status.match_id) setMatchId(status.match_id);
+    try {
+      const albums = await api.privateAlbums.listForUser(p.user_id);
+      setPrivateAlbums(albums.albums);
+    } catch {
+      setPrivateAlbums([]);
+    }
   };
 
   useEffect(() => {
@@ -231,6 +239,20 @@ export default function ProfileDetailPage() {
           </button>
         </div>
       </div>
+
+      {privateAlbums.length > 0 && (
+        <section className="mt-6 space-y-4">
+          <h3 className="font-display text-lg font-semibold text-[#c9a962]">Albums privés</h3>
+          {privateAlbums.map((album) => (
+            <PrivateAlbumGallery
+              key={album.id}
+              ownerUserId={profile.user_id}
+              album={album}
+              onAccessChange={() => void load()}
+            />
+          ))}
+        </section>
+      )}
 
       <div className="mt-6">
         <SafetyTips compact />

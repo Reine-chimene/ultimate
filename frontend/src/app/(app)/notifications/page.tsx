@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Eye,
   Heart,
+  Lock,
   MessageCircle,
   UserPlus,
 } from "lucide-react";
@@ -23,6 +24,7 @@ function notificationIcon(type: string) {
   if (type === "match_created" || type === "match") return Heart;
   if (type === "message_received") return MessageCircle;
   if (type === "profile_view") return Eye;
+  if (type.startsWith("private_album")) return Lock;
   if (type.startsWith("connection")) return UserPlus;
   return Bell;
 }
@@ -35,6 +37,7 @@ function notificationHref(n: Notification): string | null {
     return `/profil/${n.reference_id}`;
   }
   if (n.type.startsWith("connection")) return "/matchs";
+  if (n.reference_type === "private_album") return "/mon-profil/albums-prives";
   return null;
 }
 

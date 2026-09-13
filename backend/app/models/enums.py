@@ -85,6 +85,19 @@ class OnlineStatus(str, enum.Enum):
     OFFLINE = "offline"
 
 
+class PrivateAlbumAccessStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    REVOKED = "revoked"
+
+
+class PrivateAlbumPhotoModerationStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
 class InterestCategory(str, enum.Enum):
     OUTINGS = "outings"
     TRAVEL = "travel"

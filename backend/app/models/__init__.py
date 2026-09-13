@@ -12,6 +12,11 @@ from app.models.enums import (
 from app.models.meeting import Availability, Meeting
 from app.models.travel import TravelPlan
 from app.models.privacy import UserPrivacySettings
+from app.models.private_album import (
+    PrivateAlbum,
+    PrivateAlbumAccessRequest,
+    PrivateAlbumPhoto,
+)
 from app.models.profile import Interest, Photo, Profile
 from app.models.social import Block, Conversation, Like, Match, Message, ProfileView, Report
 from app.models.subscription import Notification, Payment, Subscription
@@ -33,6 +38,9 @@ __all__ = [
     "Payment",
     "PaymentStatus",
     "Photo",
+    "PrivateAlbum",
+    "PrivateAlbumAccessRequest",
+    "PrivateAlbumPhoto",
     "Profile",
     "ProfileView",
     "RelationshipIntention",

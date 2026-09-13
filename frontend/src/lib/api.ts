@@ -14,6 +14,10 @@ import type {
   PrivacySettings,
   Profile,
   ProfileVisitorsResponse,
+  PrivateAlbumAccessRequest,
+  PrivateAlbumDetail,
+  PrivateAlbumListResponse,
+  PrivateAlbumPhoto,
   PublicProfile,
   Report,
   Subscription,
@@ -331,6 +335,86 @@ export const api = {
     }) =>
       request<TravelPlan>("/travel", { method: "POST", body: JSON.stringify(data) }),
     delete: (id: string) => request(`/travel/${id}`, { method: "DELETE" }),
+  },
+  privateAlbums: {
+    listMine: () => request<PrivateAlbumListResponse>("/profiles/me/private-albums"),
+    getMine: (albumId: string) =>
+      request<PrivateAlbumDetail>(`/profiles/me/private-albums/${albumId}`),
+    create: (data: { title: string; description?: string; is_visible_on_profile?: boolean }) =>
+      request<PrivateAlbumDetail>("/profiles/me/private-albums", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (albumId: string, data: { title?: string; description?: string; is_visible_on_profile?: boolean }) =>
+      request<PrivateAlbumDetail>(`/profiles/me/private-albums/${albumId}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    delete: (albumId: string) =>
+      request(`/profiles/me/private-albums/${albumId}`, { method: "DELETE" }),
+    uploadPhoto: async (albumId: string, file: File): Promise<PrivateAlbumPhoto> => {
+      const token = getToken();
+      const form = new FormData();
+      form.append("file", file);
+      const headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(`${API_URL}/api/v1/profiles/me/private-albums/${albumId}/photos`, {
+        method: "POST",
+        headers,
+        body: form,
+      });
+      if (!res.ok) {
+        let detail = "Impossible d'ajouter cette photo.";
+        try {
+          const body = await res.json();
+          if (typeof body.detail === "string") detail = body.detail;
+        } catch {
+          /* ignore */
+        }
+        throw new ApiError(res.status, detail);
+      }
+      return res.json();
+    },
+    deletePhoto: (albumId: string, photoId: string) =>
+      request(`/profiles/me/private-albums/${albumId}/photos/${photoId}`, { method: "DELETE" }),
+    listRequests: (albumId: string) =>
+      request<{ requests: PrivateAlbumAccessRequest[] }>(
+        `/profiles/me/private-albums/${albumId}/requests`,
+      ),
+    approveRequest: (albumId: string, requestId: string) =>
+      request<PrivateAlbumAccessRequest>(
+        `/profiles/me/private-albums/${albumId}/requests/${requestId}/approve`,
+        { method: "POST" },
+      ),
+    rejectRequest: (albumId: string, requestId: string) =>
+      request<PrivateAlbumAccessRequest>(
+        `/profiles/me/private-albums/${albumId}/requests/${requestId}/reject`,
+        { method: "POST" },
+      ),
+    revokeAccess: (albumId: string, requestId: string) =>
+      request<PrivateAlbumAccessRequest>(
+        `/profiles/me/private-albums/${albumId}/requests/${requestId}/revoke`,
+        { method: "POST" },
+      ),
+    listForUser: (userId: string) =>
+      request<PrivateAlbumListResponse>(`/profiles/${userId}/private-albums`),
+    requestAccess: (userId: string, albumId: string) =>
+      request<PrivateAlbumAccessRequest>(
+        `/profiles/${userId}/private-albums/${albumId}/request-access`,
+        { method: "POST" },
+      ),
+    fetchPhotoBlob: async (albumId: string, photoId: string): Promise<Blob> => {
+      const token = getToken();
+      const headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(`${API_URL}/api/v1/private-albums/${albumId}/photos/${photoId}`, {
+        headers,
+      });
+      if (!res.ok) {
+        throw new ApiError(res.status, "Accès refusé");
+      }
+      return res.blob();
+    },
   },
   admin: {
     stats: () => request<AdminStats>("/admin/stats"),

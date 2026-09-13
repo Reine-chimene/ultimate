@@ -63,3 +63,9 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     privacy_settings: Mapped["UserPrivacySettings | None"] = relationship(
         "UserPrivacySettings", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    private_albums: Mapped[list["PrivateAlbum"]] = relationship(
+        "PrivateAlbum", back_populates="owner", cascade="all, delete-orphan"
+    )
+    private_album_photos: Mapped[list["PrivateAlbumPhoto"]] = relationship(
+        "PrivateAlbumPhoto", back_populates="owner", cascade="all, delete-orphan"
+    )

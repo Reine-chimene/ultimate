@@ -302,3 +302,50 @@ export interface AuthTokens {
   refresh_token: string;
   token_type: string;
 }
+
+export type PrivateAlbumAccessStatus = "pending" | "approved" | "rejected" | "revoked";
+
+export interface PrivateAlbumPhoto {
+  id: string;
+  album_id: string;
+  mime_type: string;
+  file_size: number;
+  width?: number | null;
+  height?: number | null;
+  moderation_status: string;
+  view_url?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PrivateAlbumSummary {
+  id: string;
+  owner_id: string;
+  title: string;
+  description?: string | null;
+  photo_count: number;
+  is_owner: boolean;
+  access_status?: PrivateAlbumAccessStatus | null;
+  can_view_photos: boolean;
+  is_visible_on_profile: boolean;
+  photos: PrivateAlbumPhoto[];
+}
+
+export interface PrivateAlbumDetail extends PrivateAlbumSummary {
+  pending_request_count: number;
+}
+
+export interface PrivateAlbumListResponse {
+  albums: PrivateAlbumSummary[];
+}
+
+export interface PrivateAlbumAccessRequest {
+  id: string;
+  album_id: string;
+  requester_id: string;
+  requester_display_name: string;
+  status: PrivateAlbumAccessStatus;
+  responded_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}

@@ -168,6 +168,59 @@ class NotificationService:
             actor_user_id=accepter.id,
         )
 
+    async def notify_private_album_access_request(
+        self, owner_id: UUID, requester: User, album
+    ) -> None:
+        await self.create(
+            owner_id,
+            "private_album_access_request",
+            "Demande d'accès à un album privé",
+            f"🔒 {self.display_name(requester)} souhaite accéder à « {album.title} »",
+            actor_user_id=requester.id,
+            reference_type="private_album",
+            reference_id=album.id,
+            dedupe_reference=True,
+        )
+
+    async def notify_private_album_access_approved(
+        self, requester: User, owner: User, album
+    ) -> None:
+        await self.create(
+            requester.id,
+            "private_album_access_approved",
+            "Accès accordé",
+            f"✅ {self.display_name(owner)} vous a donné accès à « {album.title} »",
+            actor_user_id=owner.id,
+            reference_type="private_album",
+            reference_id=album.id,
+        )
+
+    async def notify_private_album_access_rejected(
+        self, requester: User, owner: User, album
+    ) -> None:
+        await self.create(
+            requester.id,
+            "private_album_access_rejected",
+            "Demande refusée",
+            f"❌ {self.display_name(owner)} a refusé votre accès à « {album.title} »",
+            actor_user_id=owner.id,
+            reference_type="private_album",
+            reference_id=album.id,
+        )
+
+    async def notify_private_album_access_revoked(
+        self, requester: User, owner: User, album
+    ) -> None:
+        await self.create(
+            requester.id,
+            "private_album_access_revoked",
+            "Accès révoqué",
+            f"🔒 {self.display_name(owner)} a révoqué votre accès à « {album.title} »",
+            actor_user_id=owner.id,
+            reference_type="private_album",
+            reference_id=album.id,
+        )
+
     async def notify_connection_declined(
         self, sender_id: UUID, decliner: User
     ) -> None:
