@@ -12,7 +12,7 @@ from app.auth.jwt import verify_refresh_token
 from app.countries import default_timezone_for_country
 from app.languages import DEFAULT_LANGUAGE
 from app.models.auth_tokens import PasswordResetToken
-from app.models.enums import Gender, RelationshipIntention, SubscriptionPlan, SubscriptionStatus
+from app.models.enums import AccountType, Gender, RelationshipIntention, SubscriptionPlan, SubscriptionStatus
 from app.models.profile import Profile
 from app.models.subscription import Subscription
 from app.models.user import User
@@ -42,6 +42,7 @@ class AuthService:
             display_name=first,
             date_of_birth=data.date_of_birth,
             gender=data.gender,
+            account_type=data.account_type,
             city=data.city.strip(),
             country=country,
             timezone=timezone,
@@ -57,6 +58,9 @@ class AuthService:
             relationship_intention=RelationshipIntention.UNSURE,
             looking_for_genders=[opposite_gender],
             preferred_intentions=[RelationshipIntention.UNSURE],
+            partner_first_name=data.partner_first_name.strip() if data.partner_first_name else None,
+            partner_gender=data.partner_gender,
+            partner_date_of_birth=data.partner_date_of_birth,
         )
         self.db.add(profile)
 

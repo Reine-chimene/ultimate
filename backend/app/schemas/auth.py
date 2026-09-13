@@ -1,10 +1,10 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.languages import DEFAULT_LANGUAGE, is_supported_language
-from app.models.enums import Gender, UserRole
+from app.models.enums import AccountType, Gender, UserRole
 from app.schemas.common import ORMModel
 
 
@@ -14,6 +14,10 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     date_of_birth: date
     gender: Gender
+    account_type: AccountType = AccountType.SINGLE
+    partner_first_name: str | None = Field(default=None, min_length=2, max_length=100)
+    partner_gender: Gender | None = None
+    partner_date_of_birth: date | None = None
     city: str = Field(min_length=2, max_length=100)
     country: str = Field(default="CA", min_length=2, max_length=2)
     timezone: str | None = Field(default=None, max_length=64)
@@ -51,6 +55,24 @@ class RegisterRequest(BaseModel):
         if age < 18:
             raise ValueError("Vous devez avoir au moins 18 ans")
         return value
+
+    @field_validator("partner_date_of_birth")
+    @classmethod
+    def validate_partner_age(cls, value: date | None) -> date | None:
+        if value is None:
+            return value
+        today = date.today()
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if age < 18:
+            raise ValueError("Votre partenaire doit avoir au moins 18 ans")
+        return value
+
+    @model_validator(mode="after")
+    def validate_couple_fields(self):
+        if self.account_type == AccountType.COUPLE:
+            if not self.partner_first_name or not self.partner_gender or not self.partner_date_of_birth:
+                raise ValueError("Les informations du partenaire sont requises pour un profil couple")
+        return self
 
 
 class LoginRequest(BaseModel):
@@ -91,5 +113,6 @@ class UserResponse(ORMModel):
     is_active: bool
     onboarding_completed: bool = False
     preferred_language: str = DEFAULT_LANGUAGE
+    account_type: AccountType = AccountType.SINGLE
     terms_accepted_at: datetime
     created_at: datetime

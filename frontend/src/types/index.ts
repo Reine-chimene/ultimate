@@ -1,4 +1,5 @@
 export type Gender = "male" | "female" | "non_binary" | "other";
+export type AccountType = "single" | "couple";
 export type RelationshipIntention =
   | "relationship"
   | "casual"
@@ -55,6 +56,7 @@ export interface User {
   display_name?: string | null;
   date_of_birth: string;
   gender: Gender;
+  account_type?: AccountType;
   city: string;
   country: string;
   timezone: string;
@@ -79,9 +81,43 @@ export interface Interest {
   category?: string | null;
 }
 
+export interface Fantasy {
+  id: string;
+  tag: string;
+  category?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeedComment {
+  id: string;
+  post_id: string;
+  author_id: string;
+  author_display_name: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeedPost {
+  id: string;
+  author_id: string;
+  author_display_name: string;
+  author_account_type: AccountType;
+  content: string;
+  image_url?: string | null;
+  like_count: number;
+  comment_count: number;
+  liked_by_me: boolean;
+  comments: FeedComment[];
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PublicProfile {
   id: string;
   user_id: string;
+  account_type?: AccountType;
   display_name: string;
   first_name?: string | null;
   age: number;
@@ -106,11 +142,16 @@ export interface PublicProfile {
   is_connected?: boolean;
   profile_completion_percent?: number | null;
   connection_state?: ConnectionState | null;
+  partner_first_name?: string | null;
+  partner_gender?: Gender | null;
+  partner_age?: number | null;
+  fantasies?: string[];
 }
 
 export interface Profile {
   id: string;
   user_id: string;
+  account_type?: AccountType;
   display_name?: string | null;
   bio: string | null;
   relationship_intention: RelationshipIntention;
@@ -127,6 +168,10 @@ export interface Profile {
   timezone?: string | null;
   photos: Photo[];
   interests: Interest[];
+  partner_first_name?: string | null;
+  partner_gender?: Gender | null;
+  partner_date_of_birth?: string | null;
+  fantasies?: Fantasy[];
 }
 
 export interface Match {
@@ -310,6 +355,7 @@ export type PrivateAlbumAccessStatus = "pending" | "approved" | "rejected" | "re
 export interface PrivateAlbumPhoto {
   id: string;
   album_id: string;
+  media_type?: "photo" | "video";
   mime_type: string;
   file_size: number;
   width?: number | null;

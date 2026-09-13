@@ -38,6 +38,7 @@ function notificationHref(n: Notification): string | null {
   }
   if (n.type.startsWith("connection")) return "/matchs";
   if (n.reference_type === "private_album") return "/mon-profil/albums-prives";
+  if (n.reference_type === "feed_post") return "/fil";
   return null;
 }
 

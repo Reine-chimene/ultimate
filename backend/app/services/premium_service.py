@@ -51,3 +51,6 @@ class PremiumService:
 
     async def can_use_advanced_tonight_filters(self, user: User) -> bool:
         return await self.is_premium(user)
+
+    async def can_upload_private_videos(self, user: User) -> bool:
+        return await self.is_premium(user)

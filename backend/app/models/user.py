@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.models.enums import Gender, UserRole, pg_enum
+from app.models.enums import AccountType, Gender, UserRole, pg_enum
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 
 
@@ -22,6 +22,11 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
     gender: Mapped[Gender] = mapped_column(pg_enum(Gender, "gender"), nullable=False)
+    account_type: Mapped[AccountType] = mapped_column(
+        pg_enum(AccountType, "account_type", create_type=False),
+        default=AccountType.SINGLE,
+        nullable=False,
+    )
     city: Mapped[str] = mapped_column(String(100), nullable=False)
     country: Mapped[str] = mapped_column(String(2), nullable=False, default="CA", index=True)
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="America/Toronto")

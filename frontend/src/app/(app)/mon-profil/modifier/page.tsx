@@ -5,11 +5,12 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
-import type { Profile, RelationshipIntention } from "@/types";
+import type { AccountType, Gender, Profile, RelationshipIntention } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { INTENTION_LABELS } from "@/lib/constants";
 import { InterestSelector } from "@/components/profile/InterestSelector";
+import { FantasySelector } from "@/components/profile/FantasySelector";
 import { COUNTRIES, defaultTimezoneForCountry } from "@/lib/countries";
 import { getPrimaryPhoto } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -25,6 +26,10 @@ export default function EditProfilePage() {
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("CA");
   const [timezone, setTimezone] = useState("America/Toronto");
+  const [accountType, setAccountType] = useState<AccountType>("single");
+  const [partnerFirstName, setPartnerFirstName] = useState("");
+  const [partnerGender, setPartnerGender] = useState<Gender>("male");
+  const [partnerDob, setPartnerDob] = useState("");
   const [loading, setLoading] = useState(false);
 
   const refreshProfile = () => api.profiles.me().then(setProfile);
@@ -39,6 +44,10 @@ export default function EditProfilePage() {
       setCity(p.city ?? "");
       setCountry(p.country ?? "CA");
       setTimezone(p.timezone ?? "America/Toronto");
+      setAccountType(p.account_type ?? "single");
+      setPartnerFirstName(p.partner_first_name ?? "");
+      setPartnerGender(p.partner_gender ?? "male");
+      setPartnerDob(p.partner_date_of_birth ?? "");
     });
   }, []);
 
@@ -53,6 +62,10 @@ export default function EditProfilePage() {
         city,
         country,
         timezone,
+        account_type: accountType,
+        partner_first_name: accountType === "couple" ? partnerFirstName.trim() : null,
+        partner_gender: accountType === "couple" ? partnerGender : null,
+        partner_date_of_birth: accountType === "couple" ? partnerDob || null : null,
       });
       router.push("/mon-profil");
     } finally {
@@ -129,9 +142,31 @@ export default function EditProfilePage() {
           ))}
         </Select>
 
+        <Select label="Type de profil" value={accountType} onChange={(e) => setAccountType(e.target.value as AccountType)}>
+          <option value="single">Célibataire</option>
+          <option value="couple">Couple</option>
+        </Select>
+        {accountType === "couple" && (
+          <>
+            <Input label="Prénom du/de la partenaire" value={partnerFirstName} onChange={(e) => setPartnerFirstName(e.target.value)} />
+            <Select label="Genre du/de la partenaire" value={partnerGender} onChange={(e) => setPartnerGender(e.target.value as Gender)}>
+              <option value="female">Femme</option>
+              <option value="male">Homme</option>
+              <option value="non_binary">Non-binaire</option>
+              <option value="other">Autre</option>
+            </Select>
+            <Input label="Date de naissance du/de la partenaire" type="date" value={partnerDob} onChange={(e) => setPartnerDob(e.target.value)} />
+          </>
+        )}
+
         <div>
           <label className="mb-2 block text-sm text-[#9a8f8a]">Centres d&apos;intérêt</label>
           <InterestSelector selected={profile.interests} onChange={refreshProfile} />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm text-[#9a8f8a]">Préférences & fantaisies</label>
+          <FantasySelector selected={profile.fantasies ?? []} onChange={refreshProfile} />
         </div>
 
         <div className="flex gap-3 pt-4">

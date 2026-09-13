@@ -2,8 +2,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import Gender, RelationshipIntention
+from datetime import date
+
+from app.models.enums import AccountType, Gender, RelationshipIntention
 from app.schemas.common import ORMModel, TimestampSchema
+from app.schemas.fantasies import FantasyResponse
 
 
 class PhotoCreate(BaseModel):
@@ -30,6 +33,12 @@ class InterestResponse(ORMModel, TimestampSchema):
     category: str | None = None
 
 
+class CoupleProfileUpdate(BaseModel):
+    partner_first_name: str | None = Field(default=None, min_length=2, max_length=100)
+    partner_gender: Gender | None = None
+    partner_date_of_birth: date | None = None
+
+
 class ProfileUpdate(BaseModel):
     bio: str | None = Field(default=None, max_length=2000)
     relationship_intention: RelationshipIntention | None = None
@@ -38,6 +47,10 @@ class ProfileUpdate(BaseModel):
     country: str | None = Field(default=None, min_length=2, max_length=2)
     timezone: str | None = Field(default=None, min_length=3, max_length=64)
     display_name: str | None = Field(default=None, min_length=2, max_length=50)
+    account_type: AccountType | None = None
+    partner_first_name: str | None = Field(default=None, min_length=2, max_length=100)
+    partner_gender: Gender | None = None
+    partner_date_of_birth: date | None = None
 
 
 class PreferencesUpdate(BaseModel):
@@ -61,6 +74,7 @@ class PreferencesResponse(BaseModel):
 class ProfileResponse(ORMModel, TimestampSchema):
     id: UUID
     user_id: UUID
+    account_type: AccountType = AccountType.SINGLE
     display_name: str | None = None
     bio: str | None
     relationship_intention: RelationshipIntention
@@ -77,11 +91,16 @@ class ProfileResponse(ORMModel, TimestampSchema):
     timezone: str | None = None
     photos: list[PhotoResponse] = []
     interests: list[InterestResponse] = []
+    partner_first_name: str | None = None
+    partner_gender: Gender | None = None
+    partner_date_of_birth: date | None = None
+    fantasies: list["FantasyResponse"] = []
 
 
 class PublicProfileResponse(ORMModel):
     id: UUID
     user_id: UUID
+    account_type: AccountType = AccountType.SINGLE
     display_name: str
     first_name: str | None = None
     age: int
@@ -106,3 +125,7 @@ class PublicProfileResponse(ORMModel):
     is_connected: bool = False
     profile_completion_percent: int | None = None
     connection_state: str | None = None
+    partner_first_name: str | None = None
+    partner_gender: Gender | None = None
+    partner_age: int | None = None
+    fantasies: list[str] = []

@@ -6,6 +6,7 @@ from app.routers import (
     availability,
     connections,
     discovery,
+    feed,
     likes,
     matches,
     meetings,
@@ -39,3 +40,4 @@ api_router.include_router(reports.router)
 api_router.include_router(admin.router)
 api_router.include_router(world.router)
 api_router.include_router(travel.router)
+api_router.include_router(feed.router)

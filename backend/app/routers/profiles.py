@@ -19,6 +19,8 @@ from app.schemas.profile import (
     PublicProfileResponse,
 )
 from app.constants.interests import INTEREST_CATALOG
+from app.schemas.fantasies import FantasyCreate, FantasyResponse
+from app.services.fantasy_service import FantasyService
 from app.services.interest_service import InterestService
 from app.services.pass_service import PassService
 from app.services.photo_upload_service import PhotoUploadError, PhotoUploadService
@@ -179,6 +181,43 @@ async def delete_interest(
 @router.get("/interests/catalog")
 async def get_interests_catalog():
     return {"categories": INTEREST_CATALOG}
+
+
+@router.get("/fantasies/catalog")
+async def get_fantasies_catalog():
+    return {"categories": FantasyService.catalog()}
+
+
+@router.get("/me/fantasies", response_model=list[FantasyResponse])
+async def list_my_fantasies(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await FantasyService(db).list_for_user(current_user)
+
+
+@router.post("/me/fantasies", response_model=FantasyResponse, status_code=status.HTTP_201_CREATED)
+async def add_fantasy(
+    data: FantasyCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await FantasyService(db).add(current_user, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.delete("/me/fantasies/{fantasy_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_fantasy(
+    fantasy_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await FantasyService(db).remove(current_user, fantasy_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @router.post("/me/like/{user_id}", status_code=status.HTTP_201_CREATED)

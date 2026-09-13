@@ -9,7 +9,11 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.enums import PrivateAlbumAccessStatus, PrivateAlbumPhotoModerationStatus
+from app.models.enums import (
+    PrivateAlbumAccessStatus,
+    PrivateAlbumMediaType,
+    PrivateAlbumPhotoModerationStatus,
+)
 from app.models.private_album import PrivateAlbum, PrivateAlbumAccessRequest, PrivateAlbumPhoto
 from app.models.social import Block
 from app.models.user import User
@@ -25,8 +29,15 @@ from app.schemas.private_album import (
 )
 from app.services.notification_service import NotificationService
 from app.services.photo_upload_service import PhotoUploadError, PhotoUploadService
+from app.services.premium_service import PremiumService
 from app.services.profile_service import ProfileService
 from app.services.storage_service import StorageService
+
+MAX_VIDEO_BYTES = 50 * 1024 * 1024
+ALLOWED_VIDEO_TYPES = {
+    "video/mp4": "mp4",
+    "video/webm": "webm",
+}
 
 
 class PrivateAlbumService:
@@ -86,6 +97,7 @@ class PrivateAlbumService:
         return PrivateAlbumPhotoResponse(
             id=photo.id,
             album_id=photo.album_id,
+            media_type=photo.media_type,
             mime_type=photo.mime_type,
             file_size=photo.file_size,
             width=photo.width,
@@ -220,22 +232,44 @@ class PrivateAlbumService:
         if album is None or album.owner_id != user.id:
             raise ValueError("Album introuvable")
 
-        processed = PhotoUploadService(ProfileService(self.db)).validate_and_process(
-            content, content_type
-        )
-        width, height = self._image_dimensions(processed)
-        storage_key = await self.storage.save_private(user.id, processed, "jpg")
-
-        photo = PrivateAlbumPhoto(
-            album_id=album.id,
-            owner_id=user.id,
-            storage_key=storage_key,
-            mime_type="image/jpeg",
-            file_size=len(processed),
-            width=width,
-            height=height,
-            moderation_status=PrivateAlbumPhotoModerationStatus.APPROVED,
-        )
+        normalized_type = (content_type or "").split(";")[0].strip().lower()
+        if normalized_type in ALLOWED_VIDEO_TYPES:
+            if not await PremiumService(self.db).can_upload_private_videos(user):
+                raise ValueError("Les vidéos privées sont réservées aux membres Premium")
+            if len(content) == 0:
+                raise PhotoUploadError("Aucun fichier fourni")
+            if len(content) > MAX_VIDEO_BYTES:
+                raise PhotoUploadError("La vidéo ne peut pas dépasser 50 Mo")
+            ext = ALLOWED_VIDEO_TYPES[normalized_type]
+            storage_key = await self.storage.save_private(user.id, content, ext)
+            photo = PrivateAlbumPhoto(
+                album_id=album.id,
+                owner_id=user.id,
+                storage_key=storage_key,
+                media_type=PrivateAlbumMediaType.VIDEO,
+                mime_type=normalized_type,
+                file_size=len(content),
+                width=None,
+                height=None,
+                moderation_status=PrivateAlbumPhotoModerationStatus.APPROVED,
+            )
+        else:
+            processed = PhotoUploadService(ProfileService(self.db)).validate_and_process(
+                content, content_type
+            )
+            width, height = self._image_dimensions(processed)
+            storage_key = await self.storage.save_private(user.id, processed, "jpg")
+            photo = PrivateAlbumPhoto(
+                album_id=album.id,
+                owner_id=user.id,
+                storage_key=storage_key,
+                media_type=PrivateAlbumMediaType.PHOTO,
+                mime_type="image/jpeg",
+                file_size=len(processed),
+                width=width,
+                height=height,
+                moderation_status=PrivateAlbumPhotoModerationStatus.APPROVED,
+            )
         self.db.add(photo)
         await self.db.commit()
         await self.db.refresh(photo)

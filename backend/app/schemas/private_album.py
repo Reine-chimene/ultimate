@@ -2,7 +2,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import PrivateAlbumAccessStatus, PrivateAlbumPhotoModerationStatus
+from app.models.enums import (
+    PrivateAlbumAccessStatus,
+    PrivateAlbumMediaType,
+    PrivateAlbumPhotoModerationStatus,
+)
 from app.schemas.common import ORMModel, TimestampSchema
 
 
@@ -21,6 +25,7 @@ class PrivateAlbumUpdate(BaseModel):
 class PrivateAlbumPhotoResponse(ORMModel, TimestampSchema):
     id: UUID
     album_id: UUID
+    media_type: PrivateAlbumMediaType = PrivateAlbumMediaType.PHOTO
     mime_type: str
     file_size: int
     width: int | None = None

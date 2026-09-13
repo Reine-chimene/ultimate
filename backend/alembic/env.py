@@ -33,6 +33,8 @@ from app.models import (  # noqa: F401
     User,
     UserPrivacySettings,
 )
+from app.models.feed import FeedPost, FeedPostComment, FeedPostLike  # noqa: F401
+from app.models.profile import ProfileFantasy  # noqa: F401
 
 config = context.config
 settings = get_settings()

@@ -9,9 +9,16 @@ interface PrivatePhotoImageProps {
   photoId: string;
   alt: string;
   className?: string;
+  mediaType?: "photo" | "video";
 }
 
-export function PrivatePhotoImage({ albumId, photoId, alt, className = "" }: PrivatePhotoImageProps) {
+export function PrivatePhotoImage({
+  albumId,
+  photoId,
+  alt,
+  className = "",
+  mediaType = "photo",
+}: PrivatePhotoImageProps) {
   const [src, setSrc] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
@@ -46,6 +53,10 @@ export function PrivatePhotoImage({ albumId, photoId, alt, className = "" }: Pri
 
   if (!src) {
     return <div className={`animate-pulse bg-white/5 ${className}`} />;
+  }
+
+  if (mediaType === "video") {
+    return <video src={src} controls className={`object-cover ${className}`} />;
   }
 
   return (

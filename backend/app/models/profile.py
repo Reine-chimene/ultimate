@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import ForeignKey, Integer, String, Text
+from datetime import date
+
+from sqlalchemy import Date, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -38,6 +40,11 @@ class Profile(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         ARRAY(String(2)), nullable=False, default=list
     )
     occupation: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    partner_first_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    partner_gender: Mapped[Gender | None] = mapped_column(
+        pg_enum(Gender, "gender", create_type=False), nullable=True
+    )
+    partner_date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     user: Mapped["User"] = relationship("User", back_populates="profile")
     photos: Mapped[list["Photo"]] = relationship(
@@ -45,6 +52,9 @@ class Profile(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     interests: Mapped[list["Interest"]] = relationship(
         "Interest", back_populates="profile", cascade="all, delete-orphan"
+    )
+    fantasies: Mapped[list["ProfileFantasy"]] = relationship(
+        "ProfileFantasy", back_populates="profile", cascade="all, delete-orphan"
     )
 
 
@@ -59,6 +69,19 @@ class Photo(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     profile: Mapped["Profile"] = relationship("Profile", back_populates="photos")
+
+
+class ProfileFantasy(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    __tablename__ = "profile_fantasies"
+    __table_args__ = (UniqueConstraint("profile_id", "tag", name="uq_profile_fantasy_tag"),)
+
+    profile_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    tag: Mapped[str] = mapped_column(String(100), nullable=False)
+    category: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    profile: Mapped["Profile"] = relationship("Profile", back_populates="fantasies")
 
 
 class Interest(Base, UUIDPrimaryKeyMixin, TimestampMixin):

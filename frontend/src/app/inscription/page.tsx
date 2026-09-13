@@ -25,6 +25,10 @@ export default function RegisterPage() {
     country: "CA",
     timezone: "America/Toronto",
     preferred_language: "fr" as PreferredLanguage,
+    account_type: "single" as "single" | "couple",
+    partner_first_name: "",
+    partner_gender: "male",
+    partner_date_of_birth: "",
     terms_accepted: false,
     is_adult: false,
   });
@@ -49,11 +53,20 @@ export default function RegisterPage() {
         return;
       }
     }
+    if (form.account_type === "couple") {
+      if (!form.partner_first_name.trim() || !form.partner_date_of_birth) {
+        setError("Les informations de votre partenaire sont requises pour un profil couple");
+        return;
+      }
+    }
     setLoading(true);
     try {
       await register({
         ...form,
         gender: form.gender,
+        partner_first_name: form.account_type === "couple" ? form.partner_first_name.trim() : undefined,
+        partner_gender: form.account_type === "couple" ? form.partner_gender : undefined,
+        partner_date_of_birth: form.account_type === "couple" ? form.partner_date_of_birth : undefined,
         terms_accepted: true,
         is_adult: true,
       });
@@ -91,12 +104,47 @@ export default function RegisterPage() {
             ))}
           </Select>
           <Input label="Date de naissance" type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} required />
+          <Select
+            label="Type de profil"
+            value={form.account_type}
+            onChange={(e) => setForm({ ...form, account_type: e.target.value as "single" | "couple" })}
+          >
+            <option value="single">Célibataire</option>
+            <option value="couple">Couple</option>
+          </Select>
           <Select label="Genre" value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}>
             <option value="female">Femme</option>
             <option value="male">Homme</option>
             <option value="non_binary">Non-binaire</option>
             <option value="other">Autre</option>
           </Select>
+          {form.account_type === "couple" && (
+            <>
+              <Input
+                label="Prénom du/de la partenaire"
+                value={form.partner_first_name}
+                onChange={(e) => setForm({ ...form, partner_first_name: e.target.value })}
+                required
+              />
+              <Select
+                label="Genre du/de la partenaire"
+                value={form.partner_gender}
+                onChange={(e) => setForm({ ...form, partner_gender: e.target.value })}
+              >
+                <option value="female">Femme</option>
+                <option value="male">Homme</option>
+                <option value="non_binary">Non-binaire</option>
+                <option value="other">Autre</option>
+              </Select>
+              <Input
+                label="Date de naissance du/de la partenaire"
+                type="date"
+                value={form.partner_date_of_birth}
+                onChange={(e) => setForm({ ...form, partner_date_of_birth: e.target.value })}
+                required
+              />
+            </>
+          )}
           <Select
             label="Pays"
             value={form.country}

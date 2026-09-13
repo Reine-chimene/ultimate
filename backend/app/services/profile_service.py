@@ -43,15 +43,22 @@ class ProfileService:
         result = await self.db.execute(
             select(Profile)
             .where(Profile.user_id == user_id)
-            .options(selectinload(Profile.photos), selectinload(Profile.interests))
+            .options(
+                selectinload(Profile.photos),
+                selectinload(Profile.interests),
+                selectinload(Profile.fantasies),
+            )
         )
         return result.scalar_one_or_none()
 
     def _profile_response(self, user: User, profile: Profile) -> ProfileResponse:
         country = get_country(user.country)
+        from app.schemas.fantasies import FantasyResponse
+
         return ProfileResponse(
             id=profile.id,
             user_id=profile.user_id,
+            account_type=user.account_type,
             display_name=user.display_name or user.first_name,
             bio=profile.bio,
             relationship_intention=profile.relationship_intention,
@@ -68,6 +75,10 @@ class ProfileService:
             timezone=user.timezone,
             photos=[PhotoResponse.model_validate(p) for p in profile.photos],
             interests=[InterestResponse.model_validate(i) for i in profile.interests],
+            partner_first_name=profile.partner_first_name,
+            partner_gender=profile.partner_gender,
+            partner_date_of_birth=profile.partner_date_of_birth,
+            fantasies=[FantasyResponse.model_validate(f) for f in profile.fantasies],
             created_at=profile.created_at,
             updated_at=profile.updated_at,
         )
@@ -84,7 +95,7 @@ class ProfileService:
             raise ValueError("Profil introuvable")
 
         update_data = data.model_dump(exclude_unset=True)
-        user_fields = {"city", "country", "timezone", "display_name"}
+        user_fields = {"city", "country", "timezone", "display_name", "account_type"}
         if "display_name" in update_data and update_data["display_name"]:
             dn = update_data["display_name"].strip()
             if len(dn) < 2:
@@ -336,9 +347,15 @@ class ProfileService:
             prefs = await self.privacy.get_for_user(user.id)
         online = PrivacyService.public_online_status(user.last_seen_at, prefs)
 
+        partner_age = (
+            calculate_age(profile.partner_date_of_birth)
+            if profile.partner_date_of_birth is not None
+            else None
+        )
         return PublicProfileResponse(
             id=profile.id,
             user_id=user.id,
+            account_type=user.account_type,
             display_name=(user.display_name or user.first_name).strip(),
             first_name=None,
             age=calculate_age(user.date_of_birth),
@@ -363,6 +380,10 @@ class ProfileService:
             is_connected=connected or False,
             profile_completion_percent=completion.percent,
             connection_state=connection_state.value if connection_state else None,
+            partner_first_name=profile.partner_first_name,
+            partner_gender=profile.partner_gender,
+            partner_age=partner_age,
+            fantasies=[f.tag for f in profile.fantasies],
         )
 
     async def get_public_profile(self, profile_id: UUID, current_user: User) -> PublicProfileResponse:
@@ -370,7 +391,11 @@ class ProfileService:
             select(Profile, User)
             .join(User, User.id == Profile.user_id)
             .where(Profile.id == profile_id)
-            .options(selectinload(Profile.photos), selectinload(Profile.interests))
+            .options(
+                selectinload(Profile.photos),
+                selectinload(Profile.interests),
+                selectinload(Profile.fantasies),
+            )
         )
         row = result.first()
         if row is None:

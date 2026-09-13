@@ -71,17 +71,30 @@ Réponse : `{"status":"ok","service":"ultimate-backend"}`
 
 1. https://app.netlify.com → **Sign up with GitHub**
 2. **Add new site** → Import **`Reine-chimene/ultimate`**
-3. Variable :
+3. Netlify lit automatiquement `netlify.toml` à la racine du repo
+4. **Ne pas** définir `NEXT_PUBLIC_API_URL` dans le dashboard (laisser vide)
+   - Le proxy `/api/v1/*` → Fly.io est configuré dans `netlify.toml`
+5. **Deploy site** (ou attendre le déploiement auto après `git push origin main`)
+6. Notez l'URL Netlify (ex. `https://votre-site.netlify.app`)
 
-| Key | Value |
-|-----|--------|
-| `NEXT_PUBLIC_API_URL` | `https://ultimate-api.fly.dev` |
+### Redéployer Phase 1 manuellement
 
-4. **Deploy** → notez l'URL Netlify
+Dans Netlify → **Deploys** → **Trigger deploy** → **Deploy site**
+
+Ou depuis le repo (si Netlify CLI connecté) :
+
+```bash
+cd ~/Documents/ultimate
+npx netlify-cli deploy --prod --build
+```
 
 ---
 
-## ÉTAPE 4 — CORS
+## ÉTAPE 4 — CORS (optionnel)
+
+Le backend accepte déjà `https://*.netlify.app` en production.
+
+Pour une URL fixe dans les secrets Fly :
 
 ```bash
 fly secrets set CORS_ORIGINS="https://votre-url.netlify.app"

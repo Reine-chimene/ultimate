@@ -99,20 +99,11 @@ def find_notification(token: str, ntype: str) -> dict | None:
     return None
 
 
-async def count_notifications(user_id: str, ntype: str) -> int:
-    from sqlalchemy import func, select
-
-    from app.database import async_session_factory
-    from app.models.subscription import Notification
-
-    async with async_session_factory() as db:
-        result = await db.execute(
-            select(func.count()).select_from(Notification).where(
-                Notification.user_id == uuid.UUID(user_id),
-                Notification.type == ntype,
-            )
-        )
-        return int(result.scalar_one() or 0)
+def count_notifications(token: str, ntype: str) -> int:
+    status, data = req("GET", "/notifications?page=1&limit=50", token)
+    if status != 200:
+        return 0
+    return sum(1 for item in data.get("items", []) if item.get("type") == ntype)
 
 
 def main() -> int:
@@ -138,7 +129,7 @@ def main() -> int:
     )
 
     # 15 — no duplicate match per user
-    match_count_a = run_async(count_notifications(user_a["id"], "match_created"))
+    match_count_a = count_notifications(token_a, "match_created")
     record("15 — no duplicate match", match_count_a == 1, f"count={match_count_a}")
 
     # 4 — profile view notification
@@ -147,25 +138,25 @@ def main() -> int:
     record("4 — profile view notification", view_notif is not None)
 
     # 6 — deduplicated view no extra notification
-    before = run_async(count_notifications(user_b["id"], "profile_view"))
+    before = count_notifications(token_b, "profile_view")
     req("GET", f"/profiles/{profile_b_id}", token_a)
     req("GET", f"/profiles/{profile_b_id}", token_a)
-    after = run_async(count_notifications(user_b["id"], "profile_view"))
+    after = count_notifications(token_b, "profile_view")
     record("6 — deduplicated view", after == before == 1, f"before={before} after={after}")
 
     # 5 — incognito no profile view notification
     subscribe_premium(token_c)
     req("PATCH", "/profiles/me/privacy", token_c, {"incognito_enabled": True})
-    before_inc = run_async(count_notifications(user_b["id"], "profile_view"))
+    before_inc = count_notifications(token_b, "profile_view")
     req("GET", f"/profiles/{profile_b_id}", token_c)
-    after_inc = run_async(count_notifications(user_b["id"], "profile_view"))
+    after_inc = count_notifications(token_b, "profile_view")
     record("5 — incognito no notification", after_inc == before_inc, f"count={after_inc}")
 
     # 7 — blocked no notification
     req("POST", "/reports/block", token_b, {"blocked_id": user_c["id"]})
-    before_block = run_async(count_notifications(user_b["id"], "profile_view"))
+    before_block = count_notifications(token_b, "profile_view")
     req("GET", f"/profiles/{profile_b_id}", token_c)
-    after_block = run_async(count_notifications(user_b["id"], "profile_view"))
+    after_block = count_notifications(token_b, "profile_view")
     record("7 — blocked no notification", after_block == before_block)
 
     # 3 — message notification

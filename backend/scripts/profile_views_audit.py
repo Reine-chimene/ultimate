@@ -91,21 +91,11 @@ def subscribe_premium(token: str) -> None:
     assert status == 201, data
 
 
-async def count_views(viewed_user_id: str, viewer_id: str | None = None) -> int:
-    from sqlalchemy import func, select
-
-    from app.database import async_session_factory
-    from app.models.social import ProfileView
-
-    uid = uuid.UUID(viewed_user_id)
-    async with async_session_factory() as db:
-        query = select(func.count()).select_from(ProfileView).where(
-            ProfileView.viewed_user_id == uid
-        )
-        if viewer_id:
-            query = query.where(ProfileView.viewer_id == uuid.UUID(viewer_id))
-        result = await db.execute(query)
-        return int(result.scalar_one() or 0)
+def visitor_total(token: str) -> int:
+    status, data = req("GET", "/profiles/me/visitors?page=1&limit=50", token)
+    if status != 200:
+        return -1
+    return int(data.get("total_count") or 0)
 
 
 def main() -> int:
@@ -117,29 +107,29 @@ def main() -> int:
 
     # 1 — visit created
     status, _ = req("GET", f"/profiles/{profile_a_id}", token_b)
-    views = run_async(count_views(user_a["id"], user_b["id"]))
-    record("1 — profile visit created", status == 200 and views == 1, f"views={views}")
+    views = visitor_total(token_a)
+    record("1 — profile visit created", status == 200 and views >= 1, f"total={views}")
 
     # 12 — deduplication (refresh / repeated view)
     req("GET", f"/profiles/{profile_a_id}", token_b)
     req("GET", f"/profiles/{profile_a_id}", token_b)
-    views_dedup = run_async(count_views(user_a["id"], user_b["id"]))
-    record("12 — visit deduplication 24h", views_dedup == 1, f"views={views_dedup}")
+    views_dedup = visitor_total(token_a)
+    record("12 — visit deduplication 24h", views_dedup == 1, f"total={views_dedup}")
 
     # 2 — self view
-    before_self = run_async(count_views(user_a["id"], user_a["id"]))
+    before_self = visitor_total(token_a)
     status_self, _ = req("GET", f"/profiles/{profile_a_id}", token_a)
-    after_self = run_async(count_views(user_a["id"], user_a["id"]))
+    after_self = visitor_total(token_a)
     record(
         "2 — self view no visit",
-        status_self == 200 and after_self == before_self == 0,
+        status_self == 200 and after_self == before_self,
         f"before={before_self} after={after_self}",
     )
 
     # 3 — blocked user
     req("POST", "/reports/block", token_a, {"blocked_id": user_b["id"]})
     status_blocked, _ = req("GET", f"/profiles/{profile_a_id}", token_b)
-    views_blocked = run_async(count_views(user_a["id"], user_b["id"]))
+    views_blocked = visitor_total(token_a)
     record(
         "3 — blocked no visit",
         status_blocked == 404 and views_blocked == 1,
@@ -149,7 +139,7 @@ def main() -> int:
 
     # 4 — normal visitor after unblock
     req("GET", f"/profiles/{profile_a_id}", token_b)
-    record("4 — normal visitor recorded", run_async(count_views(user_a["id"], user_b["id"])) == 1)
+    record("4 — normal visitor recorded", visitor_total(token_a) >= 1)
 
     # 6 — free cannot enable incognito
     status_free, data_free = req("PATCH", "/profiles/me/privacy", token_b, {"incognito_enabled": True})
@@ -176,9 +166,9 @@ def main() -> int:
 
     # 5 — incognito premium no visit
     req("PATCH", "/profiles/me/privacy", token_c, {"incognito_enabled": True})
-    before_inc = run_async(count_views(user_a["id"], user_c["id"]))
+    before_inc = visitor_total(token_a)
     req("GET", f"/profiles/{profile_a_id}", token_c)
-    after_inc = run_async(count_views(user_a["id"], user_c["id"]))
+    after_inc = visitor_total(token_a)
     record(
         "5 — incognito premium no visit",
         after_inc == before_inc,

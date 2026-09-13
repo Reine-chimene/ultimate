@@ -25,6 +25,8 @@ import type {
   TravelPlan,
   User,
   WorldResponse,
+  FeedPost,
+  FeedComment,
 } from "@/types";
 
 // Vide en prod Netlify → requêtes relatives proxifiées vers Fly.io
@@ -180,6 +182,15 @@ export const api = {
         "/profiles/me/likes-sent",
       ),
     interestsCatalog: () => request<{ categories: Record<string, string[]> }>("/profiles/interests/catalog"),
+    fantasiesCatalog: () => request<{ categories: Record<string, string[]> }>("/profiles/fantasies/catalog"),
+    listFantasies: () => request<import("@/types").Fantasy[]>("/profiles/me/fantasies"),
+    addFantasy: (tag: string, category?: string) =>
+      request<import("@/types").Fantasy>("/profiles/me/fantasies", {
+        method: "POST",
+        body: JSON.stringify({ tag, category: category || null }),
+      }),
+    deleteFantasy: (id: string) =>
+      request(`/profiles/me/fantasies/${id}`, { method: "DELETE" }),
     deleteInterest: (id: string) =>
       request(`/profiles/me/interests/${id}`, { method: "DELETE" }),
     completion: () =>
@@ -415,6 +426,22 @@ export const api = {
       }
       return res.blob();
     },
+  },
+  feed: {
+    list: (page = 1, limit = 20) =>
+      request<{ items: FeedPost[]; total: number; page: number; limit: number }>(
+        `/feed?page=${page}&limit=${limit}`,
+      ),
+    create: (data: { content: string; image_url?: string }) =>
+      request<FeedPost>("/feed", { method: "POST", body: JSON.stringify(data) }),
+    like: (postId: string) => request<FeedPost>(`/feed/${postId}/like`, { method: "POST" }),
+    unlike: (postId: string) => request<FeedPost>(`/feed/${postId}/like`, { method: "DELETE" }),
+    comment: (postId: string, content: string) =>
+      request<FeedComment>(`/feed/${postId}/comments`, {
+        method: "POST",
+        body: JSON.stringify({ content }),
+      }),
+    delete: (postId: string) => request(`/feed/${postId}`, { method: "DELETE" }),
   },
   admin: {
     stats: () => request<AdminStats>("/admin/stats"),

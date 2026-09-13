@@ -10,6 +10,16 @@ class Gender(str, enum.Enum):
     OTHER = "other"
 
 
+class AccountType(str, enum.Enum):
+    SINGLE = "single"
+    COUPLE = "couple"
+
+
+class PrivateAlbumMediaType(str, enum.Enum):
+    PHOTO = "photo"
+    VIDEO = "video"
+
+
 class RelationshipIntention(str, enum.Enum):
     RELATIONSHIP = "relationship"
     CASUAL = "casual"

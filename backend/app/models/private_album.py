@@ -20,6 +20,7 @@ from app.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 from app.models.enums import (
     PrivateAlbumAccessStatus,
+    PrivateAlbumMediaType,
     PrivateAlbumPhotoModerationStatus,
     pg_enum,
 )
@@ -63,6 +64,11 @@ class PrivateAlbumPhoto(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     file_size: Mapped[int] = mapped_column(Integer, nullable=False)
     width: Mapped[int | None] = mapped_column(Integer, nullable=True)
     height: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    media_type: Mapped[PrivateAlbumMediaType] = mapped_column(
+        pg_enum(PrivateAlbumMediaType, "private_album_media_type", create_type=False),
+        nullable=False,
+        default=PrivateAlbumMediaType.PHOTO,
+    )
     moderation_status: Mapped[PrivateAlbumPhotoModerationStatus] = mapped_column(
         pg_enum(PrivateAlbumPhotoModerationStatus, "private_album_photo_moderation_status"),
         nullable=False,

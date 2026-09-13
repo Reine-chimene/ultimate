@@ -178,7 +178,7 @@ export function PrivateAlbumManager({ onAlbumsChange }: PrivateAlbumManagerProps
                 <input
                   ref={fileRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
@@ -192,8 +192,9 @@ export function PrivateAlbumManager({ onAlbumsChange }: PrivateAlbumManagerProps
                   loading={uploading}
                   onClick={() => fileRef.current?.click()}
                 >
-                  <Camera className="h-4 w-4" /> Ajouter une photo
+                  <Camera className="h-4 w-4" /> Ajouter photo / vidéo
                 </Button>
+                <p className="mt-2 text-xs text-[#9a8f8a]">Vidéos privées réservées aux membres Premium (MP4, WebM, max 50 Mo).</p>
 
                 {selected.photos.length > 0 ? (
                   <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -203,6 +204,7 @@ export function PrivateAlbumManager({ onAlbumsChange }: PrivateAlbumManagerProps
                           albumId={selected.id}
                           photoId={p.id}
                           alt=""
+                          mediaType={p.media_type ?? "photo"}
                           className="h-full w-full"
                         />
                         <button
