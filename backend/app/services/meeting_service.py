@@ -5,10 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.enums import MeetingStatus
 from app.models.meeting import Meeting
-from app.models.subscription import Notification
 from app.models.user import User
 from app.schemas.meeting import MeetingCreate, MeetingResponse
 from app.services.match_service import MatchService
+from app.services.notification_service import NotificationService
 from app.timezone_utils import format_meeting_time
 
 
@@ -52,13 +52,9 @@ class MeetingService:
         )
         self.db.add(meeting)
 
-        notification = Notification(
-            user_id=data.receiver_id,
-            type="meeting",
-            title="Invitation à une rencontre",
-            body=f"{requester.first_name} souhaite vous rencontrer!",
+        await NotificationService(self.db).notify_meeting_invitation(
+            data.receiver_id, requester
         )
-        self.db.add(notification)
         await self.db.commit()
         await self.db.refresh(meeting)
         return await self._to_response(meeting)
@@ -94,13 +90,9 @@ class MeetingService:
             raise ValueError("Cette rencontre ne peut plus être acceptée")
 
         meeting.status = MeetingStatus.ACCEPTED
-        notification = Notification(
-            user_id=meeting.requester_id,
-            type="meeting",
-            title="Rencontre acceptée",
-            body=f"{user.first_name} a accepté votre invitation!",
+        await NotificationService(self.db).notify_meeting_accepted(
+            meeting.requester_id, user
         )
-        self.db.add(notification)
         await self.db.commit()
         await self.db.refresh(meeting)
         return await self._to_response(meeting)

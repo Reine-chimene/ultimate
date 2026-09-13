@@ -82,6 +82,20 @@ class Message(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     sender: Mapped["User"] = relationship("User")
 
 
+class ProfileView(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    __tablename__ = "profile_views"
+
+    viewer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    viewed_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+
+    viewer: Mapped["User"] = relationship("User", foreign_keys=[viewer_id])
+    viewed_user: Mapped["User"] = relationship("User", foreign_keys=[viewed_user_id])
+
+
 class Block(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "blocks"
     __table_args__ = (UniqueConstraint("blocker_id", "blocked_id", name="uq_block_pair"),)

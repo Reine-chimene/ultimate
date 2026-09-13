@@ -11,8 +11,9 @@ from app.models.enums import (
 )
 from app.models.meeting import Availability, Meeting
 from app.models.travel import TravelPlan
+from app.models.privacy import UserPrivacySettings
 from app.models.profile import Interest, Photo, Profile
-from app.models.social import Block, Conversation, Like, Match, Message, Report
+from app.models.social import Block, Conversation, Like, Match, Message, ProfileView, Report
 from app.models.subscription import Notification, Payment, Subscription
 from app.models.user import User
 
@@ -33,6 +34,7 @@ __all__ = [
     "PaymentStatus",
     "Photo",
     "Profile",
+    "ProfileView",
     "RelationshipIntention",
     "Report",
     "ReportStatus",
@@ -41,5 +43,6 @@ __all__ = [
     "SubscriptionStatus",
     "TravelPlan",
     "User",
+    "UserPrivacySettings",
     "UserRole",
 ]

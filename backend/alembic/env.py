@@ -23,10 +23,12 @@ from app.models import (  # noqa: F401
     Payment,
     Photo,
     Profile,
+    ProfileView,
     Report,
     Subscription,
     TravelPlan,
     User,
+    UserPrivacySettings,
 )
 
 config = context.config

@@ -154,6 +154,8 @@ class DiscoveryService:
 
         max_distance = filters.max_distance_km or my_profile.max_distance_km
 
+        privacy_map = await self.profile_service.privacy.load_map([user.id for user, _ in rows])
+
         profiles: list[PublicProfileResponse] = []
         for user, profile in rows:
             if not is_compatible(current_user, my_profile, user, profile):
@@ -166,6 +168,7 @@ class DiscoveryService:
                 my_profile,
                 is_available_tonight=user.id in available_tonight_ids,
                 availability_note=availability_map.get(user.id),
+                privacy_map=privacy_map,
             )
 
             if max_distance and pub.distance_km is not None:

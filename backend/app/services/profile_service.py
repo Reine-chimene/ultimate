@@ -29,7 +29,7 @@ from app.services.compatibility import (
     is_compatible,
 )
 from app.constants.interests import ALL_INTEREST_LABELS, INTEREST_CATALOG
-from app.services.presence_service import PresenceService
+from app.services.privacy_service import PrivacyPrefs, PrivacyService
 from app.services.profile_completion import compute_profile_completion
 from app.timezone_utils import format_availability_until
 
@@ -37,6 +37,7 @@ from app.timezone_utils import format_availability_until
 class ProfileService:
     def __init__(self, db: AsyncSession):
         self.db = db
+        self.privacy = PrivacyService(db)
 
     async def _get_profile_by_user_id(self, user_id: UUID) -> Profile | None:
         result = await self.db.execute(
@@ -288,6 +289,7 @@ class ProfileService:
         is_available_tonight: bool = False,
         availability_note: str | None = None,
         is_connected: bool | None = None,
+        privacy_map: dict | None = None,
     ) -> PublicProfileResponse:
         indicators: list[str] = []
         score = compatibility_score
@@ -328,7 +330,11 @@ class ProfileService:
         if is_available_tonight and not note:
             note = format_availability_until(None, user.timezone)
 
-        online = PresenceService.online_status(user.last_seen_at)
+        if privacy_map is not None:
+            prefs = privacy_map.get(user.id, PrivacyPrefs())
+        else:
+            prefs = await self.privacy.get_for_user(user.id)
+        online = PrivacyService.public_online_status(user.last_seen_at, prefs)
 
         return PublicProfileResponse(
             id=profile.id,
@@ -371,5 +377,17 @@ class ProfileService:
             raise ValueError("Profil introuvable")
 
         profile, user = row
+        if user.id == current_user.id:
+            my_profile = profile
+            return await self.to_public_profile(user, profile, current_user, my_profile)
+
+        from app.services.profile_view_service import ProfileViewService
+
+        view_service = ProfileViewService(self.db)
+        if await view_service._is_blocked(current_user.id, user.id):
+            raise ValueError("Profil introuvable")
+
         my_profile = await self._get_profile_by_user_id(current_user.id)
-        return await self.to_public_profile(user, profile, current_user, my_profile)
+        public = await self.to_public_profile(user, profile, current_user, my_profile)
+        await view_service.record_view(current_user, user)
+        return public

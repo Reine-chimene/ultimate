@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Clock, Heart, MessageCircle, Sparkles, UserPlus, X } from "lucide-react";
+import { Clock, Eye, Heart, MessageCircle, Sparkles, UserPlus, X } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Match, PendingRequestItem } from "@/types";
 import { getPrimaryPhoto, formatDate, profileDisplayName } from "@/lib/utils";
@@ -93,6 +93,17 @@ export default function MatchesPage() {
         title="Matchs & connexions"
         subtitle="J'aime → intérêt réciproque → match → message. Les demandes de connexion restent disponibles en parallèle."
       />
+
+      <Link
+        href="/visiteurs"
+        className="premium-card mb-6 flex items-center gap-3 p-4 transition hover:bg-white/[0.03]"
+      >
+        <Eye className="h-5 w-5 shrink-0 text-[#c9a962]" />
+        <div>
+          <p className="font-medium">Visiteurs de profil</p>
+          <p className="text-sm text-[#9a8f8a]">Voir qui a consulté votre profil récemment</p>
+        </div>
+      </Link>
 
       {likesRemaining != null && (
         <p className="mb-2 text-sm text-[#9a8f8a]">

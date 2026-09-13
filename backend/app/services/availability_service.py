@@ -105,6 +105,8 @@ class AvailabilityService:
         my_profile = await self.profile_service._get_profile_by_user_id(current_user.id)
         passed_ids = await PassService(self.db).get_passed_ids(current_user.id)
 
+        privacy_map = await self.profile_service.privacy.load_map([user.id for user, _, _ in rows])
+
         users = []
         for user, profile, availability in rows:
             if user.id in passed_ids:
@@ -127,6 +129,7 @@ class AvailabilityService:
                     my_profile,
                     is_available_tonight=True,
                     availability_note=note,
+                    privacy_map=privacy_map,
                 )
             )
 

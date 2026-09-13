@@ -8,8 +8,8 @@ from sqlalchemy.orm import selectinload
 from app.models.enums import ConnectionRequestStatus, ConnectionState
 from app.models.profile import Profile
 from app.models.social import Block, Like, Match
-from app.models.subscription import Notification
 from app.models.user import User
+from app.services.notification_service import NotificationService
 from app.schemas.discovery import LikeActionResponse
 from app.schemas.interests import InterestListItem, InterestListsResponse
 from app.services.compatibility import is_compatible
@@ -147,24 +147,11 @@ class InterestService:
             is_match = True
             match_id = match.id
 
-            for uid, other in [(sender.id, receiver), (receiver_id, sender)]:
-                self.db.add(
-                    Notification(
-                        user_id=uid,
-                        type="match",
-                        title="Nouveau match !",
-                        body=f"Vous et {self._display(other)} vous êtes mutuellement intéressés.",
-                    )
-                )
+            notifications = NotificationService(self.db)
+            await notifications.notify_match_created(sender, receiver, match.id)
+            await notifications.notify_match_created(receiver, sender, match.id)
         else:
-            self.db.add(
-                Notification(
-                    user_id=receiver_id,
-                    type="interest_received",
-                    title="Nouvel intérêt",
-                    body=f"{self._display(sender)} s'intéresse à votre profil.",
-                )
-            )
+            await NotificationService(self.db).notify_like_received(receiver, sender)
 
         await self.db.commit()
         return LikeActionResponse(

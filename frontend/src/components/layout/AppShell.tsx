@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { api } from "@/lib/api";
 import {
   Bell,
   Calendar,
@@ -25,7 +27,7 @@ const mainNavItems = [
   { href: "/recherche", label: "Recherche", icon: Search, match: (p: string) => p.startsWith("/recherche") },
   { href: "/messages", label: "Messages", icon: MessageCircle, match: (p: string) => p.startsWith("/messages") },
   { href: "/ce-soir", label: "Ce soir", icon: Moon, match: (p: string) => p.startsWith("/ce-soir") },
-  { href: "/mon-profil", label: "Profil", icon: User, match: (p: string) => p.startsWith("/mon-profil") || p.startsWith("/profil") || p.startsWith("/preferences") || p.startsWith("/parametres") || p.startsWith("/voyage") || p.startsWith("/world") || p.startsWith("/premium") || p.startsWith("/rendez-vous") || p.startsWith("/matchs") },
+  { href: "/mon-profil", label: "Profil", icon: User, match: (p: string) => p.startsWith("/mon-profil") || p.startsWith("/profil") || p.startsWith("/preferences") || p.startsWith("/parametres") || p.startsWith("/visiteurs") || p.startsWith("/voyage") || p.startsWith("/world") || p.startsWith("/premium") || p.startsWith("/rendez-vous") || p.startsWith("/matchs") },
 ];
 
 const desktopExtraNav = [
@@ -76,10 +78,30 @@ function NavLink({
   );
 }
 
+function NotificationBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#6b1d3a] px-1 text-[10px] font-semibold text-white">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
 
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    api.notifications
+      .unreadCount()
+      .then((res) => setUnreadCount(res.count))
+      .catch(() => setUnreadCount(0));
+  }, [user, pathname]);
 
   return (
     <div className="min-h-screen lg:pl-64">
@@ -99,6 +121,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
         </nav>
         <div className="space-y-1 border-t border-white/[0.06] p-4">
+          <Link
+            href="/notifications"
+            className="relative flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-[#9a8f8a] transition hover:bg-white/5 hover:text-[#f5f0e8]"
+          >
+            <span className="relative">
+              <Bell className="h-4 w-4" />
+              <NotificationBadge count={unreadCount} />
+            </span>
+            Notifications
+          </Link>
           <Link
             href="/parametres"
             className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-[#9a8f8a] transition hover:bg-white/5 hover:text-[#f5f0e8]"
@@ -138,6 +170,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" />
+            <NotificationBadge count={unreadCount} />
           </Link>
         </div>
       </header>

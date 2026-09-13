@@ -8,8 +8,8 @@ from sqlalchemy.orm import selectinload
 from app.models.enums import ConnectionRequestStatus, ConnectionState
 from app.models.profile import Profile
 from app.models.social import Block, Conversation, Like, Match
-from app.models.subscription import Notification
 from app.models.user import User
+from app.services.notification_service import NotificationService
 from app.schemas.connections import (
     ConnectionActionResponse,
     ConnectionRequestCreate,
@@ -143,17 +143,6 @@ class ConnectionService:
         )
         self.db.add(match)
 
-        user1 = await self.db.get(User, user1_id)
-        user2 = await self.db.get(User, user2_id)
-        for uid, other in [(user1_id, user2), (user2_id, user1)]:
-            notification = Notification(
-                user_id=uid,
-                type="connection",
-                title="Nouvelle connexion",
-                body=f"Vous êtes maintenant connecté·e avec {self._display(other) if other else 'quelqu un'}!",
-            )
-            self.db.add(notification)
-
         await self.db.flush()
         return match
 
@@ -218,13 +207,7 @@ class ConnectionService:
             )
             self.db.add(like)
 
-        notification = Notification(
-            user_id=data.receiver_id,
-            type="connection_request",
-            title="Nouvelle demande de connexion",
-            body=f"{self._display(sender)} souhaite se connecter avec vous.",
-        )
-        self.db.add(notification)
+        await NotificationService(self.db).notify_connection_request(data.receiver_id, sender)
         await self.db.commit()
 
         return ConnectionActionResponse(
@@ -255,13 +238,11 @@ class ConnectionService:
         match = await self._create_connection(user.id, sender_id)
 
         sender = await self.db.get(User, sender_id)
-        notification = Notification(
-            user_id=sender_id,
-            type="connection_accepted",
-            title="Demande acceptée",
-            body=f"{self._display(user)} a accepté votre demande de connexion!",
-        )
-        self.db.add(notification)
+        notifications = NotificationService(self.db)
+        await notifications.notify_connection_accepted(sender_id, user, match.id)
+        if sender:
+            await notifications.notify_match_created(sender, user, match.id)
+            await notifications.notify_match_created(user, sender, match.id)
         await self.db.commit()
 
         return ConnectionActionResponse(
@@ -284,13 +265,7 @@ class ConnectionService:
 
         like.request_status = ConnectionRequestStatus.DECLINED
 
-        notification = Notification(
-            user_id=sender_id,
-            type="connection_declined",
-            title="Demande déclinée",
-            body=f"{self._display(user)} a décliné votre demande de connexion.",
-        )
-        self.db.add(notification)
+        await NotificationService(self.db).notify_connection_declined(sender_id, user)
         await self.db.commit()
 
         return ConnectionActionResponse(state=ConnectionState.DECLINED)

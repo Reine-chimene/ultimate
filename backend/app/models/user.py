@@ -49,11 +49,17 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         "Subscription", back_populates="user", cascade="all, delete-orphan"
     )
     notifications: Mapped[list["Notification"]] = relationship(
-        "Notification", back_populates="user", cascade="all, delete-orphan"
+        "Notification",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="Notification.user_id",
     )
     availability_slots: Mapped[list["Availability"]] = relationship(
         "Availability", back_populates="user", cascade="all, delete-orphan"
     )
     travel_plans: Mapped[list["TravelPlan"]] = relationship(
         "TravelPlan", back_populates="user", cascade="all, delete-orphan"
+    )
+    privacy_settings: Mapped["UserPrivacySettings | None"] = relationship(
+        "UserPrivacySettings", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )

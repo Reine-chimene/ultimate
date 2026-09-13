@@ -1,6 +1,6 @@
 from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import exists, func, or_, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -14,7 +14,8 @@ from app.schemas.search import SearchFilters, SearchResponse
 from app.services.compatibility import calculate_age, is_compatible
 from app.services.pass_service import PassService
 from app.services.premium_service import PremiumService
-from app.services.presence_service import PresenceService
+from app.models.privacy import UserPrivacySettings
+from app.services.privacy_service import PrivacyService
 from app.services.profile_service import ProfileService
 
 
@@ -157,8 +158,27 @@ class SearchService:
             )
 
         if filters.online_only:
-            threshold = datetime.now(UTC) - timedelta(hours=24)
-            query = query.where(User.last_seen_at.isnot(None), User.last_seen_at >= threshold)
+            online_threshold, recent_threshold = PrivacyService.online_only_thresholds()
+            query = query.outerjoin(
+                UserPrivacySettings, UserPrivacySettings.user_id == User.id
+            )
+            query = query.where(
+                User.last_seen_at.isnot(None),
+                or_(
+                    UserPrivacySettings.id.is_(None),
+                    UserPrivacySettings.show_online.is_(True),
+                ),
+                or_(
+                    User.last_seen_at >= online_threshold,
+                    and_(
+                        or_(
+                            UserPrivacySettings.id.is_(None),
+                            UserPrivacySettings.show_last_seen.is_(True),
+                        ),
+                        User.last_seen_at >= recent_threshold,
+                    ),
+                ),
+            )
 
         count_query = select(func.count()).select_from(query.subquery())
         total_result = await self.db.execute(count_query)
@@ -179,6 +199,7 @@ class SearchService:
         availability_map = {a.user_id: a for a in availability_result.scalars().all()}
 
         max_distance = filters.max_distance_km or my_profile.max_distance_km
+        privacy_map = await self.profile_service.privacy.load_map([user.id for user, _ in rows])
         profiles = []
         for user, profile in rows:
             if not is_compatible(current_user, my_profile, user, profile):
@@ -191,6 +212,7 @@ class SearchService:
                 my_profile,
                 is_available_tonight=avail is not None,
                 availability_note=avail.note if avail else None,
+                privacy_map=privacy_map,
             )
             if max_distance and pub.distance_km is not None and pub.distance_km > max_distance:
                 continue

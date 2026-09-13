@@ -7,10 +7,13 @@ import type {
   Meeting,
   Message,
   Notification,
+  NotificationListResponse,
   Photo,
   PendingRequests,
   Preferences,
+  PrivacySettings,
   Profile,
+  ProfileVisitorsResponse,
   PublicProfile,
   Report,
   Subscription,
@@ -179,6 +182,16 @@ export const api = {
       request<{ percent: number; is_complete: boolean; missing: string[]; items: { key: string; label: string; done: boolean }[] }>(
         "/profiles/me/completion",
       ),
+    privacy: () => request<PrivacySettings>("/profiles/me/privacy"),
+    updatePrivacy: (data: Partial<Pick<PrivacySettings, "show_online" | "show_last_seen" | "incognito_enabled">>) =>
+      request<PrivacySettings>("/profiles/me/privacy", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    visitors: (page = 1, limit = 20) =>
+      request<ProfileVisitorsResponse>(
+        `/profiles/me/visitors?page=${page}&limit=${limit}`,
+      ),
   },
   search: {
     query: (params?: Record<string, string | number | boolean>) => {
@@ -283,12 +296,14 @@ export const api = {
     cancel: () => request<Subscription>("/subscriptions/cancel", { method: "POST" }),
   },
   notifications: {
-    list: (unreadOnly = false) =>
-      request<Notification[]>(`/notifications?unread_only=${unreadOnly}`),
+    list: (page = 1, limit = 20, unreadOnly = false) =>
+      request<NotificationListResponse>(
+        `/notifications?page=${page}&limit=${limit}&unread_only=${unreadOnly}`,
+      ),
     unreadCount: () => request<{ count: number }>("/notifications/unread-count"),
     markRead: (id: string) =>
-      request<Notification>(`/notifications/${id}/read`, { method: "POST" }),
-    markAllRead: () => request("/notifications/read-all", { method: "POST" }),
+      request<Notification>(`/notifications/${id}/read`, { method: "PATCH" }),
+    markAllRead: () => request("/notifications/read-all", { method: "PATCH" }),
   },
   reports: {
     create: (reportedId: string, reason: string, description?: string) =>

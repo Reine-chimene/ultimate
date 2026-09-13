@@ -25,6 +25,10 @@ from app.services.photo_upload_service import PhotoUploadError, PhotoUploadServi
 from app.services.profile_completion import compute_profile_completion
 from app.services.profile_service import ProfileService
 from app.schemas.interests import InterestListsResponse
+from app.schemas.privacy import PrivacySettingsResponse, PrivacySettingsUpdate
+from app.schemas.profile_view import ProfileVisitorsResponse
+from app.services.privacy_service import PrivacyService
+from app.services.profile_view_service import ProfileViewService
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
@@ -228,6 +232,36 @@ async def clear_passes(
 ):
     count = await PassService(db).clear_all_passes(current_user)
     return {"cleared": count}
+
+
+@router.get("/me/privacy", response_model=PrivacySettingsResponse)
+async def get_my_privacy(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await PrivacyService(db).get_settings_response(current_user)
+
+
+@router.patch("/me/privacy", response_model=PrivacySettingsResponse)
+async def update_my_privacy(
+    data: PrivacySettingsUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await PrivacyService(db).update_settings(current_user, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.get("/me/visitors", response_model=ProfileVisitorsResponse)
+async def get_my_visitors(
+    page: int = 1,
+    limit: int = 20,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await ProfileViewService(db).list_visitors(current_user, page=page, limit=limit)
 
 
 @router.get("/{profile_id}", response_model=PublicProfileResponse)

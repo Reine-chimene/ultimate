@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Edit, MapPin, Settings, SlidersHorizontal } from "lucide-react";
+import { Edit, Eye, MapPin, Settings, SlidersHorizontal } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Profile, ProfileCompletion } from "@/types";
@@ -74,6 +74,23 @@ export default function MyProfilePage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <Link href="/visiteurs" className="premium-card flex items-center gap-3 p-4 transition hover:bg-white/[0.03]">
+          <Eye className="h-5 w-5 text-[#c9a962]" />
+          <div>
+            <p className="font-medium">Visiteurs</p>
+            <p className="text-sm text-[#9a8f8a]">Qui a consulté votre profil</p>
+          </div>
+        </Link>
+        <Link href="/matchs" className="premium-card flex items-center gap-3 p-4 transition hover:bg-white/[0.03]">
+          <SlidersHorizontal className="h-5 w-5 text-[#c9a962]" />
+          <div>
+            <p className="font-medium">Matchs</p>
+            <p className="text-sm text-[#9a8f8a]">Intérêts et connexions</p>
+          </div>
+        </Link>
       </div>
 
       <section className="premium-card mt-4 p-6">

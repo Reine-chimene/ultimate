@@ -25,6 +25,28 @@ export type ConnectionState =
 
 export type OnlineStatus = "online" | "recently_active" | "offline";
 
+export interface PrivacySettings {
+  show_online: boolean;
+  show_last_seen: boolean;
+  incognito_enabled: boolean;
+  can_use_incognito: boolean;
+}
+
+export interface ProfileVisitorItem {
+  user_id: string;
+  visited_at: string;
+  profile: PublicProfile;
+}
+
+export interface ProfileVisitorsResponse {
+  is_premium: boolean;
+  total_count: number;
+  page: number;
+  limit: number;
+  visitors: ProfileVisitorItem[];
+  teaser?: string | null;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -159,8 +181,20 @@ export interface Notification {
   type: string;
   title: string;
   body: string;
+  actor_user_id?: string | null;
+  reference_type?: string | null;
+  reference_id?: string | null;
   read_at: string | null;
+  is_read?: boolean;
   created_at: string;
+}
+
+export interface NotificationListResponse {
+  items: Notification[];
+  total: number;
+  page: number;
+  limit: number;
+  unread_count: number;
 }
 
 export interface Subscription {

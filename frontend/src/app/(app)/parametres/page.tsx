@@ -1,19 +1,110 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import Link from "next/link";
-import { Shield, Bell, Lock, User } from "lucide-react";
+import { Shield, Bell, Lock, User, EyeOff } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/Button";
+import { PremiumGate } from "@/components/premium/PremiumGate";
+import type { PrivacySettings } from "@/types";
+
+function PrivacyToggle({
+  label,
+  description,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  const id = useId();
+  const descId = `${id}-desc`;
+  const stateId = `${id}-state`;
+
+  return (
+    <div className="flex items-start justify-between gap-4 py-3 border-b border-white/[0.06] last:border-0">
+      <div className="min-w-0 flex-1">
+        <label htmlFor={id} className="block text-sm font-medium cursor-pointer">
+          {label}
+        </label>
+        <p id={descId} className="mt-1 text-sm text-[#9a8f8a]">
+          {description}
+        </p>
+        <span id={stateId} className="sr-only">
+          {checked ? "Activé" : "Désactivé"}
+        </span>
+      </div>
+      <button
+        id={id}
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-describedby={`${descId} ${stateId}`}
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className={`relative h-9 w-16 shrink-0 rounded-full transition-colors duration-300 disabled:opacity-50 ${
+          checked ? "bg-[#6b1d3a]" : "bg-white/10"
+        }`}
+      >
+        <span
+          aria-hidden="true"
+          className={`absolute top-1 h-7 w-7 rounded-full bg-white shadow-md transition-transform duration-300 ${
+            checked ? "left-8" : "left-1"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const [blocks, setBlocks] = useState<{ id: string; blocked_id: string }[]>([]);
+  const [privacy, setPrivacy] = useState<PrivacySettings | null>(null);
+  const [privacyLoading, setPrivacyLoading] = useState(true);
+  const [privacySaving, setPrivacySaving] = useState(false);
 
   useEffect(() => {
     api.reports.blocks().then(setBlocks).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    api.profiles
+      .privacy()
+      .then(setPrivacy)
+      .catch(() =>
+        setPrivacy({
+          show_online: true,
+          show_last_seen: true,
+          incognito_enabled: false,
+          can_use_incognito: false,
+        }),
+      )
+      .finally(() => setPrivacyLoading(false));
+  }, []);
+
+  const updatePrivacy = useCallback(async (
+    key: "show_online" | "show_last_seen" | "incognito_enabled",
+    value: boolean,
+  ) => {
+    if (!privacy) return;
+    const previous = privacy;
+    setPrivacy({ ...privacy, [key]: value });
+    setPrivacySaving(true);
+    try {
+      const updated = await api.profiles.updatePrivacy({ [key]: value });
+      setPrivacy(updated);
+    } catch {
+      setPrivacy(previous);
+    } finally {
+      setPrivacySaving(false);
+    }
+  }, [privacy]);
 
   const handleUnblock = async (id: string) => {
     await api.reports.unblock(id);
@@ -42,8 +133,49 @@ export default function SettingsPage() {
             <Lock className="h-5 w-5 text-[#c9a962]" />
             <h2 className="font-medium">Confidentialité</h2>
           </div>
-          <p className="text-sm text-[#9a8f8a]">Seule votre ville est visible. Votre localisation exacte n&apos;est jamais partagée.</p>
-          <p className="text-sm text-[#9a8f8a] mt-2">Vos coordonnées personnelles ne sont pas exposées aux autres utilisateurs.</p>
+          <p className="text-sm text-[#9a8f8a] mb-4">
+            Seule votre ville est visible. Votre localisation exacte n&apos;est jamais partagée.
+          </p>
+          {privacyLoading ? (
+            <p className="text-sm text-[#9a8f8a]">Chargement des préférences…</p>
+          ) : privacy ? (
+            <div>
+              <PrivacyToggle
+                label="Afficher mon statut en ligne"
+                description="Les autres membres peuvent voir quand vous êtes en ligne."
+                checked={privacy.show_online}
+                disabled={privacySaving}
+                onChange={(v) => void updatePrivacy("show_online", v)}
+              />
+              <PrivacyToggle
+                label="Afficher mon activité récente"
+                description="Les autres membres peuvent voir si vous avez été récemment actif."
+                checked={privacy.show_last_seen}
+                disabled={privacySaving}
+                onChange={(v) => void updatePrivacy("show_last_seen", v)}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <div className="glass-card p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <EyeOff className="h-5 w-5 text-[#c9a962]" />
+            <h2 className="font-medium">Mode Incognito</h2>
+          </div>
+          {privacyLoading ? (
+            <p className="text-sm text-[#9a8f8a]">Chargement…</p>
+          ) : privacy?.can_use_incognito ? (
+            <PrivacyToggle
+              label="Activer le mode Incognito"
+              description="Consultez les profils sans laisser de trace. Les autres membres ne verront pas votre visite."
+              checked={privacy.incognito_enabled}
+              disabled={privacySaving}
+              onChange={(v) => void updatePrivacy("incognito_enabled", v)}
+            />
+          ) : (
+            <PremiumGate message="Le mode Incognito permet de consulter les profils discrètement, sans enregistrer votre visite." />
+          )}
         </div>
 
         <div className="glass-card p-5">

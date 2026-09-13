@@ -90,10 +90,16 @@ class TravelService:
             .options(selectinload(Profile.photos), selectinload(Profile.interests))
             .limit(12)
         )
-        for user, profile in result.all():
+        rows = result.all()
+        privacy_map = await self.profile_service.privacy.load_map([user.id for user, _ in rows])
+        for user, profile in rows:
             profiles.append(
                 await self.profile_service.to_public_profile(
-                    user, profile, current_user, my_profile
+                    user,
+                    profile,
+                    current_user,
+                    my_profile,
+                    privacy_map=privacy_map,
                 )
             )
         return profiles

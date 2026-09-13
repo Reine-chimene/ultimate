@@ -9,6 +9,7 @@ from app.models.profile import Profile
 from app.models.social import Block, Conversation, Match, Message
 from app.models.user import User
 from app.schemas.match import ConversationResponse, MatchResponse, MessageCreate, MessageResponse
+from app.services.notification_service import NotificationService
 from app.services.profile_service import ProfileService
 
 
@@ -57,6 +58,10 @@ class MatchService:
         )
         matches = result.scalars().all()
         my_profile = await self.profile_service._get_profile_by_user_id(user.id)
+        other_ids = [
+            m.user2_id if m.user1_id == user.id else m.user1_id for m in matches
+        ]
+        privacy_map = await self.profile_service.privacy.load_map(other_ids)
 
         responses: list[MatchResponse] = []
         for match in matches:
@@ -72,7 +77,12 @@ class MatchService:
             if row:
                 other_u, other_p = row
                 other_user = await self.profile_service.to_public_profile(
-                    other_u, other_p, user, my_profile, is_connected=True
+                    other_u,
+                    other_p,
+                    user,
+                    my_profile,
+                    is_connected=True,
+                    privacy_map=privacy_map,
                 )
 
             response = MatchResponse.model_validate(match)
@@ -107,6 +117,12 @@ class MatchService:
             content=data.content.strip(),
         )
         self.db.add(message)
+        recipient_id = match.user2_id if match.user1_id == user.id else match.user1_id
+        recipient = await self.db.get(User, recipient_id)
+        if recipient:
+            await NotificationService(self.db).notify_message_received(
+                recipient, user, match.id, data.content
+            )
         await self.db.commit()
         await self.db.refresh(message)
         return MessageResponse.model_validate(message)
