@@ -1,13 +1,23 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.common import ORMModel, TimestampSchema
 
 
 class FeedPostCreate(BaseModel):
-    content: str = Field(min_length=1, max_length=2000)
+    content: str = Field(default="", max_length=2000)
     image_url: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def require_content_or_image(self):
+        if not self.content.strip() and not self.image_url:
+            raise ValueError("Ajoutez du texte ou une image")
+        return self
+
+
+class FeedImageUploadResponse(BaseModel):
+    url: str
 
 
 class FeedCommentCreate(BaseModel):

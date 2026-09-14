@@ -82,7 +82,7 @@ export default function LivePage() {
           SALONS LIVE
         </h1>
         <p className="mt-2 max-w-2xl text-[#9a8f8a]">
-          Lancez votre cam ou rejoignez un salon — vidéo en direct via WebRTC, micro et caméra contrôlables.
+          Vidéo WebRTC avec relais TURN — jusqu&apos;à 15 spectateurs par salon, qualité adaptative automatique.
         </p>
       </header>
 
@@ -97,8 +97,8 @@ export default function LivePage() {
         <div className="premium-card flex items-center gap-3 p-4">
           <Video className="h-8 w-8 text-[#c9a962]" />
           <div>
-            <p className="text-sm font-medium text-[#f5f0e8]">WebRTC actif</p>
-            <p className="text-xs text-[#9a8f8a]">Diffusion cam · spectateurs en temps réel</p>
+            <p className="text-sm font-medium text-[#f5f0e8]">TURN + WebRTC</p>
+            <p className="text-xs text-[#9a8f8a]">Relais activé · max 15 spectateurs/salon</p>
           </div>
         </div>
       </div>

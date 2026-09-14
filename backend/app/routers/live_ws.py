@@ -83,6 +83,8 @@ async def live_room_signal(websocket: WebSocket, room_id: UUID) -> None:
         is_host=is_host,
         websocket=websocket,
     )
+    if peer is None:
+        return
 
     try:
         while True:

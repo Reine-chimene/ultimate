@@ -1,13 +1,22 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.user import User
-from app.schemas.feed import FeedCommentCreate, FeedCommentResponse, FeedListResponse, FeedPostCreate, FeedPostResponse
+from app.schemas.feed import (
+    FeedCommentCreate,
+    FeedCommentResponse,
+    FeedImageUploadResponse,
+    FeedListResponse,
+    FeedPostCreate,
+    FeedPostResponse,
+)
+from app.services.feed_image_service import FeedImageService
 from app.services.feed_service import FeedService
+from app.services.photo_upload_service import PhotoUploadError
 
 router = APIRouter(prefix="/feed", tags=["feed"])
 
@@ -20,6 +29,19 @@ async def list_feed(
     db: AsyncSession = Depends(get_db),
 ):
     return await FeedService(db).list_feed(user, page=page, limit=limit)
+
+
+@router.post("/upload-image", response_model=FeedImageUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_feed_image(
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+):
+    content = await file.read()
+    try:
+        url = await FeedImageService().upload(user, content, file.content_type)
+        return FeedImageUploadResponse(url=url)
+    except PhotoUploadError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("", response_model=FeedPostResponse, status_code=status.HTTP_201_CREATED)

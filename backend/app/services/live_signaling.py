@@ -8,7 +8,10 @@ from uuid import UUID
 
 from fastapi import WebSocket
 
+from app.config import get_settings
+
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 @dataclass
@@ -36,9 +39,15 @@ class LiveSignalingHub:
         display_name: str,
         is_host: bool,
         websocket: WebSocket,
-    ) -> LivePeer:
-        await websocket.accept()
+    ) -> LivePeer | None:
         peers = self._room(room_id)
+        if not is_host:
+            viewer_count = sum(1 for p in peers.values() if not p.is_host)
+            if viewer_count >= settings.live_max_viewers:
+                await websocket.close(code=4429, reason="Salon complet")
+                return None
+
+        await websocket.accept()
         existing = peers.get(user_id)
         if existing is not None:
             try:

@@ -1,6 +1,5 @@
 import type { RefObject } from "react";
-
-const ICE_SERVERS: RTCIceServer[] = [{ urls: "stun:stun.l.google.com:19302" }];
+import { api } from "@/lib/api";
 
 export type SignalMessage = {
   type: string;
@@ -14,6 +13,21 @@ export type SignalMessage = {
   peers?: { user_id: string; display_name: string; is_host: boolean }[];
   message?: string;
 };
+
+const FALLBACK_ICE: RTCIceServer[] = [{ urls: "stun:stun.l.google.com:19302" }];
+
+let cachedIceServers: RTCIceServer[] | null = null;
+
+export async function fetchIceServers(): Promise<RTCIceServer[]> {
+  if (cachedIceServers) return cachedIceServers;
+  try {
+    const config = await api.live.config();
+    cachedIceServers = config.ice_servers as RTCIceServer[];
+    return cachedIceServers;
+  } catch {
+    return FALLBACK_ICE;
+  }
+}
 
 export function getLiveSignalUrl(roomId: string): string {
   if (typeof window === "undefined") return "";
@@ -36,12 +50,14 @@ type LiveWebRTCOptions = {
   remoteVideoRef: RefObject<HTMLVideoElement | null>;
   onStatus?: (status: string) => void;
   onError?: (message: string) => void;
+  onConnectionState?: (state: RTCPeerConnectionState | "disconnected") => void;
+  onViewerCount?: (count: number) => void;
 };
 
 export class LiveWebRTC {
   private ws: WebSocket | null = null;
   private localStream: MediaStream | null = null;
-  /** Host: one peer connection per viewer. Viewer: single connection to host. */
+  private iceServers: RTCIceServer[] = FALLBACK_ICE;
   private peers = new Map<string, RTCPeerConnection>();
   private options: LiveWebRTCOptions;
 
@@ -52,6 +68,8 @@ export class LiveWebRTC {
   async start() {
     const { isHost, localVideoRef, remoteVideoRef, onStatus, onError } = this.options;
     onStatus?.("Connexion au salon…");
+
+    this.iceServers = await fetchIceServers();
 
     if (isHost) {
       try {
@@ -86,7 +104,13 @@ export class LiveWebRTC {
       await this.handleSignal(msg, remoteVideoRef);
     };
 
-    this.ws.onclose = () => onStatus?.("Déconnecté du salon");
+    this.ws.onclose = (event) => {
+      if (event.code === 4429) {
+        onError?.("Salon complet — réessayez plus tard");
+      }
+      onStatus?.("Déconnecté du salon");
+      this.options.onConnectionState?.("disconnected");
+    };
     this.ws.onerror = () => onError?.("Connexion signalisation interrompue");
   }
 
@@ -96,8 +120,18 @@ export class LiveWebRTC {
     }
   }
 
+  private adaptHostQuality() {
+    if (!this.options.isHost || !this.localStream) return;
+    const count = this.peers.size;
+    this.options.onViewerCount?.(count);
+    const track = this.localStream.getVideoTracks()[0];
+    if (!track) return;
+    const height = count > 8 ? 360 : count > 4 ? 480 : 720;
+    track.applyConstraints({ height: { ideal: height }, width: { ideal: Math.round(height * 16 / 9) } }).catch(() => undefined);
+  }
+
   private createPeer(viewerId: string, remoteVideoRef: RefObject<HTMLVideoElement | null>) {
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const pc = new RTCPeerConnection({ iceServers: this.iceServers });
     this.peers.set(viewerId, pc);
 
     if (this.localStream) {
@@ -128,10 +162,18 @@ export class LiveWebRTC {
     }
 
     pc.onconnectionstatechange = () => {
+      this.options.onConnectionState?.(pc.connectionState);
       if (pc.connectionState === "failed") {
-        this.options.onError?.("Connexion vidéo échouée — réessayez");
+        this.options.onError?.("Connexion vidéo échouée — relais TURN activé, réessayez");
+      }
+      if (pc.connectionState === "connected" && !this.options.isHost) {
+        this.options.onStatus?.("Connecté en HD");
       }
     };
+
+    if (this.options.isHost) {
+      this.adaptHostQuality();
+    }
 
     return pc;
   }
@@ -160,6 +202,7 @@ export class LiveWebRTC {
       const pc = this.peers.get(msg.user_id);
       pc?.close();
       this.peers.delete(msg.user_id);
+      this.adaptHostQuality();
       return;
     }
 

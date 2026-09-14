@@ -6,10 +6,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.user import User
-from app.schemas.live import LiveRoomCreate, LiveRoomListResponse, LiveRoomResponse
+from app.schemas.live import LiveConfigResponse, LiveRoomCreate, LiveRoomListResponse, LiveRoomResponse
+from app.services.live_config_service import build_ice_servers
 from app.services.live_service import LiveService
+from app.config import get_settings
 
 router = APIRouter(prefix="/live", tags=["live"])
+
+
+@router.get("/config", response_model=LiveConfigResponse)
+async def live_config(user: User = Depends(get_current_user)):
+    settings = get_settings()
+    return LiveConfigResponse(
+        ice_servers=build_ice_servers(),
+        max_viewers=settings.live_max_viewers,
+    )
 
 
 @router.get("/rooms/{room_id}", response_model=LiveRoomResponse)

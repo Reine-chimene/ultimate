@@ -29,6 +29,10 @@ class StorageService:
         safe_ext = self._safe_extension(extension)
         return f"private/{user_id}/{uuid4()}.{safe_ext}"
 
+    def _feed_key(self, user_id: UUID, extension: str) -> str:
+        safe_ext = self._safe_extension(extension)
+        return f"feed/{user_id}/{uuid4()}.{safe_ext}"
+
     def is_private_key(self, key: str) -> bool:
         return key.startswith("private/")
 
@@ -37,6 +41,14 @@ class StorageService:
         if settings.storage_backend == "s3" and settings.s3_public_base_url:
             return f"{settings.s3_public_base_url.rstrip('/')}/{storage_key}"
         return f"{base}/media/{storage_key}"
+
+    async def save_feed(self, user_id: UUID, content: bytes, extension: str = "jpg") -> tuple[str, str]:
+        key = self._feed_key(user_id, extension)
+        if settings.storage_backend == "s3":
+            await asyncio.to_thread(self._save_s3, key, content, public=True)
+        else:
+            await asyncio.to_thread(self._save_local, key, content)
+        return key, self.public_url(key)
 
     async def save(self, user_id: UUID, content: bytes, extension: str = "jpg") -> tuple[str, str]:
         key = self._user_key(user_id, extension)

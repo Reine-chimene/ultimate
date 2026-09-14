@@ -55,6 +55,9 @@ def create_app() -> FastAPI:
         public_users = media_root / "users"
         public_users.mkdir(parents=True, exist_ok=True)
         app.mount("/media/users", StaticFiles(directory=str(public_users)), name="media_users")
+        public_feed = media_root / "feed"
+        public_feed.mkdir(parents=True, exist_ok=True)
+        app.mount("/media/feed", StaticFiles(directory=str(public_feed)), name="media_feed")
 
     @app.get("/health")
     async def health():

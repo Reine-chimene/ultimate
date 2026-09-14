@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     smtp_user: str | None = Field(default=None, validation_alias="SMTP_USER")
     smtp_password: str | None = Field(default=None, validation_alias="SMTP_PASSWORD")
     email_from: str = Field(default="noreply@ultimate.app", validation_alias="EMAIL_FROM")
+    turn_urls: str = Field(default="", validation_alias="TURN_URLS")
+    turn_username: str | None = Field(default=None, validation_alias="TURN_USERNAME")
+    turn_credential: str | None = Field(default=None, validation_alias="TURN_CREDENTIAL")
+    live_max_viewers: int = Field(default=15, validation_alias="LIVE_MAX_VIEWERS")
 
     @field_validator("database_url", mode="after")
     @classmethod

@@ -291,6 +291,8 @@ export const api = {
     tonight: () => request<TonightAvailability>("/availability/tonight"),
   },
   live: {
+    config: () =>
+      request<{ ice_servers: RTCIceServer[]; max_viewers: number }>("/live/config"),
     list: () => request<{ rooms: LiveRoom[]; total_live: number }>("/live/rooms"),
     get: (roomId: string) => request<LiveRoom>(`/live/rooms/${roomId}`),
     start: (data: { title: string; description?: string; is_vip_only?: boolean }) =>
@@ -447,6 +449,29 @@ export const api = {
       ),
     create: (data: { content: string; image_url?: string }) =>
       request<FeedPost>("/feed", { method: "POST", body: JSON.stringify(data) }),
+    uploadImage: async (file: File): Promise<{ url: string }> => {
+      const token = getToken();
+      const form = new FormData();
+      form.append("file", file);
+      const headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(`${API_URL}/api/v1/feed/upload-image`, {
+        method: "POST",
+        headers,
+        body: form,
+      });
+      if (!res.ok) {
+        let detail = "Impossible d'ajouter cette image.";
+        try {
+          const body = await res.json();
+          if (typeof body.detail === "string") detail = body.detail;
+        } catch {
+          /* ignore */
+        }
+        throw new ApiError(res.status, detail);
+      }
+      return res.json();
+    },
     like: (postId: string) => request<FeedPost>(`/feed/${postId}/like`, { method: "POST" }),
     unlike: (postId: string) => request<FeedPost>(`/feed/${postId}/like`, { method: "DELETE" }),
     comment: (postId: string, content: string) =>

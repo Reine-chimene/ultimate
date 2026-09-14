@@ -30,3 +30,8 @@ class LiveRoomResponse(ORMModel, TimestampSchema):
 class LiveRoomListResponse(BaseModel):
     rooms: list[LiveRoomResponse]
     total_live: int
+
+
+class LiveConfigResponse(BaseModel):
+    ice_servers: list[dict]
+    max_viewers: int
