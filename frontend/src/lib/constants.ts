@@ -1,9 +1,28 @@
 import type { DiscoveryMode, Gender, RelationshipIntention } from "@/types";
 
-export const TAGLINE = "MEET. TONIGHT. CONNECT.";
+export const TAGLINE = "MEET. TONIGHT. FUCK THE TABOOS.";
 export const TAGLINE_SECONDARY =
-  "Rencontres adultes sans filtre — désirs assumés, fantaisies partagées, plaisir immédiat.";
-export const TAGLINE_TERTIARY = "Coquin·e, pervers·e, curieux·se — bienvenue chez vous. 18+ · Monde entier.";
+  "Rencontres crues, fantasmes assumés, corps à corps — sans filtre, sans jugement, sans limite (18+).";
+export const TAGLINE_TERTIARY = "Filles, garçons, couples — chaud·e·s et disponibles. Monde entier gratuit.";
+
+/** Illustrations marketing générées — /public/marketing/ (PNG). */
+export const MARKETING_MEDIA = {
+  hero: "/marketing/hero.png",
+  profiles: [
+    "/marketing/profile-1.png",
+    "/marketing/profile-2.png",
+    "/marketing/profile-3.png",
+    "/marketing/profile-4.png",
+  ],
+  pillars: {
+    tonight: "/marketing/pillar-tonight.png",
+    feed: "/marketing/pillar-feed.png",
+    messages: "/marketing/pillar-messages.png",
+    private: "/marketing/pillar-private.png",
+    couples: "/marketing/pillar-couples.png",
+    live: "/marketing/pillar-live.png",
+  },
+} as const;
 
 export const GENDER_LABELS: Record<Gender, string> = {
   male: "Homme",
@@ -117,76 +136,100 @@ export const INTEREST_SUGGESTIONS = [
   "Yoga",
 ];
 
-/** Illustrations stock sensuelles — identité Ultimate (Unsplash, 18+ marketing). */
-export const LANDING_HERO_IMAGE =
-  "https://images.unsplash.com/photo-1518199266791-5375a57590ae?w=1600&q=80";
+/** Repli temporaire — remplacé dès que vous déposez les JPG dans /public/marketing/ */
+export const MARKETING_FALLBACKS = {
+  hero: "https://images.unsplash.com/photo-1518199266791-5375a57590ae?w=1600&q=80",
+  profiles: [
+    "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80",
+    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&q=80",
+    "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&q=80",
+    "https://images.unsplash.com/photo-1531746020798-e6953b06a399?w=600&q=80",
+  ],
+  pillars: {
+    tonight: "https://images.unsplash.com/photo-1547036967-7833c4055eba?w=800&q=80",
+    feed: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&q=80",
+    messages: "https://images.unsplash.com/photo-1511396060206-85a2afad1672?w=800&q=80",
+    private: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&q=80",
+    couples: "https://images.unsplash.com/photo-1516589178581-6d783895a9e2?w=800&q=80",
+    live: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&q=80",
+  },
+} as const;
+
+export const LANDING_HERO_IMAGE = MARKETING_MEDIA.hero;
+export const LANDING_HERO_FALLBACK = MARKETING_FALLBACKS.hero;
 
 export const LANDING_PILLARS = [
   {
     id: "tonight",
-    title: "Rencontres immédiates",
-    subtitle: "Ce soir · maintenant",
-    desc: "Qui est chaud·e ce soir ? Activez votre statut, choisissez votre intention — rencontre, verre coquin ou plus — et connectez-vous tout de suite.",
+    title: "Baise ce soir",
+    subtitle: "Dispo · maintenant",
+    desc: "Qui veut baiser ce soir ? Statut activé, intention claire — hôtel, chez toi, verre puis action. Pas de blabla.",
     href: "/ce-soir",
-    image: "https://images.unsplash.com/photo-1547036967-7833c4055eba?w=800&q=80",
+    image: MARKETING_MEDIA.pillars.tonight,
+    fallback: MARKETING_FALLBACKS.pillars.tonight,
     live: true,
   },
   {
     id: "feed",
-    title: "Fil communautaire",
-    subtitle: "Désirs & fantaisies",
-    desc: "Publiez sans filtre, commentez, likez — la communauté partage ce qui l'excite vraiment, sans pudibonderie.",
+    title: "Fil sans filtre",
+    subtitle: "Kinks & fantasmes",
+    desc: "Posts crus, photos suggestives, fantasmes assumés. La communauté montre ce qui l'excite — pas de censure.",
     href: "/fil",
-    image: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&q=80",
+    image: MARKETING_MEDIA.pillars.feed,
+    fallback: MARKETING_FALLBACKS.pillars.feed,
     live: true,
   },
   {
     id: "messages",
-    title: "Messagerie privée",
-    subtitle: "DM coquins",
-    desc: "Chats privés, photos et vidéos intimes. Passez du flirt à l'action en toute discrétion.",
+    title: "DM sales",
+    subtitle: "Nudes & vidéos",
+    desc: "Messages privés, nudes, clips. Du dirty talk au rendez-vous en quelques minutes.",
     href: "/messages",
-    image: "https://images.unsplash.com/photo-1511396060206-85a2afad1672?w=800&q=80",
+    image: MARKETING_MEDIA.pillars.messages,
+    fallback: MARKETING_FALLBACKS.pillars.messages,
     live: true,
   },
   {
     id: "private",
-    title: "Contenu privé",
-    subtitle: "Albums hot",
-    desc: "Photos et vidéos privées — vous décidez qui voit votre côté le plus sensuel.",
+    title: "Albums privés",
+    subtitle: "Contenu X",
+    desc: "Tes photos et vidéos les plus hard — tu choisis qui a accès. Exhibition, lingerie, scènes complètes.",
     href: "/mon-profil/albums-prives",
-    image: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&q=80",
+    image: MARKETING_MEDIA.pillars.private,
+    fallback: MARKETING_FALLBACKS.pillars.private,
     live: true,
   },
   {
     id: "couples",
-    title: "Profils couples",
-    subtitle: "Duo & fantasmes",
-    desc: "Un compte, deux corps. Fantaisies, préférences et envies assumées — swing, trio, exhibition…",
+    title: "Couples & trios",
+    subtitle: "Duo · swing · +1",
+    desc: "Profil couple, fantasmes cochés, recherche duo ou solo. Swing, candaulisme, plans à trois — tout est permis entre consentants.",
     href: "/inscription",
-    image: "https://images.unsplash.com/photo-1516589178581-6d783895a9e2?w=800&q=80",
+    image: MARKETING_MEDIA.pillars.couples,
+    fallback: MARKETING_FALLBACKS.pillars.couples,
     live: true,
   },
   {
     id: "live",
     title: "Ultimate Live",
-    subtitle: "Salons en direct",
-    desc: "Rejoignez ou lancez un salon live. VIP Gold peut diffuser en exclusif — la vidéo arrive très bientôt.",
+    subtitle: "Webcam · direct",
+    desc: "Salons live, show en cam. VIP Gold diffuse en exclusif — vidéo temps réel en cours d'ajout.",
     href: "/live",
-    image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&q=80",
+    image: MARKETING_MEDIA.pillars.live,
+    fallback: MARKETING_FALLBACKS.pillars.live,
     live: true,
   },
 ] as const;
 
 /** Intentions rapides pour « Ce soir » — une touche et c'est publié. */
 export const TONIGHT_INTENT_CHIPS = [
-  "Rencontre maintenant",
-  "Verre coquin",
-  "Hôtel / chez moi",
-  "Juste discuter d'abord",
-  "Couple cherche duo",
-  "Fantaisie ce soir",
-  "Discret · dispo tard",
+  "Baise ce soir",
+  "Hôtel maintenant",
+  "Chez moi · dispo",
+  "Couple cherche +1",
+  "Oral / préliminaires",
+  "Plan cul discret",
+  "Show cam avant",
 ] as const;
 
 export const LANDING_TRUST = [
@@ -200,23 +243,23 @@ export const LANDING_TRUST = [
 
 export const LANDING_TESTIMONIALS = [
   {
-    quote: "Inscrite en revenant du travail, j'avais une connexion le soir même. Ici, les gens savent ce qu'ils veulent.",
-    author: "Luna_MTL",
+    quote: "Connectée à 22h, chez lui à minuit. Pas de jeu de séduction — ici on dit ce qu'on veut et on le fait.",
+    author: "Luna_Sale",
     age: 27,
   },
   {
-    quote: "Ma copine et moi cherchions à pimenter nos soirées. Profil couple en 24h, communauté respectueuse et ouverte.",
+    quote: "Profil couple, fantasmes cochés, trio le week-end suivant. Enfin une app où on peut être vraiment pervers.",
     author: "DuoLibre",
     age: 34,
   },
   {
-    quote: "Le Monde entier gratuit, c'est réel. J'ai exploré des profils à Paris, Montréal et Dakar sans payer.",
+    quote: "Albums privés + nudes en DM. Monde entier gratuit — j'ai trouvé des partenaires à Abidjan et à Lyon.",
     author: "Voyageur_91",
     age: 35,
   },
   {
-    quote: "Le fil communautaire et les albums privés — enfin une app adulte complète, pas juste du swipe.",
-    author: "MrSmooth",
+    quote: "Ce soir, fil, live — tout est là. JALF vibes mais plus moderne. Les mecs envoient pas que des bonjour.",
+    author: "MrHard",
     age: 38,
   },
 ] as const;
@@ -246,8 +289,9 @@ export const LANDING_DEMO_PROFILES = [
     city: "Paris",
     country: "FR",
     flag: "🇫🇷",
-    photo: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80",
-    intention: "Disponible ce soir · coquine",
+    photo: MARKETING_MEDIA.profiles[0],
+    fallback: MARKETING_FALLBACKS.profiles[0],
+    intention: "Dispo ce soir · lingerie",
   },
   {
     name: "Marcus",
@@ -255,8 +299,9 @@ export const LANDING_DEMO_PROFILES = [
     city: "New York",
     country: "US",
     flag: "🇺🇸",
-    photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&q=80",
-    intention: "Sans engagement · maintenant",
+    photo: MARKETING_MEDIA.profiles[1],
+    fallback: MARKETING_FALLBACKS.profiles[1],
+    intention: "Boxer · chaud maintenant",
   },
   {
     name: "DuoLibre",
@@ -264,8 +309,9 @@ export const LANDING_DEMO_PROFILES = [
     city: "Montréal",
     country: "CA",
     flag: "🇨🇦",
-    photo: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&q=80",
-    intention: "Couple · fantasmes",
+    photo: MARKETING_MEDIA.profiles[2],
+    fallback: MARKETING_FALLBACKS.profiles[2],
+    intention: "Couple · cherche trio",
   },
   {
     name: "Amina",
@@ -273,8 +319,9 @@ export const LANDING_DEMO_PROFILES = [
     city: "Yaoundé",
     country: "CM",
     flag: "🇨🇲",
-    photo: "https://images.unsplash.com/photo-1531746020798-e6953b06a399?w=600&q=80",
-    intention: "Verre coquin ce soir",
+    photo: MARKETING_MEDIA.profiles[3],
+    fallback: MARKETING_FALLBACKS.profiles[3],
+    intention: "Nude privé · ce soir",
   },
 ];
 

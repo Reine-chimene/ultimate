@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -8,8 +7,11 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
+import { AgeGate } from "@/components/landing/AgeGate";
+import { MarketingImage } from "@/components/landing/MarketingImage";
 import {
   LANDING_DEMO_PROFILES,
+  LANDING_HERO_FALLBACK,
   LANDING_HERO_IMAGE,
   LANDING_PILLARS,
   LANDING_STEPS,
@@ -24,6 +26,7 @@ import { WORLD_FLAGS } from "@/lib/world-countries";
 export default function LandingPage() {
   return (
     <div className="min-h-screen">
+      <AgeGate />
       <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-[#0a0a0b]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-8">
           <Logo showTagline size="sm" />
@@ -42,20 +45,20 @@ export default function LandingPage() {
 
       {/* Hero — style JALF, identité Ultimate */}
       <section className="relative min-h-[85vh] overflow-hidden">
-        <Image
+        <MarketingImage
           src={LANDING_HERO_IMAGE}
-          alt=""
+          fallback={LANDING_HERO_FALLBACK}
           fill
           priority
           className="object-cover object-center"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0b]/70 via-[#0a0a0b]/85 to-[#0a0a0b]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0b]/55 via-[#6b1d3a]/20 to-[#0a0a0b]/95" />
         <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 py-20 text-center md:px-8 md:py-28">
           <Logo size="lg" />
           <p className="section-label mt-8">{TAGLINE}</p>
           <h1 className="mt-4 max-w-3xl font-display text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-6xl">
-            Là où vos fantasmes deviennent des rencontres
+            Rencontres adultes · corps · désirs · sans limite
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#f5f0e8]/90 md:text-xl">
             {TAGLINE_SECONDARY}
@@ -77,14 +80,18 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Profils demo */}
+      {/* Profils demo — visuels propriétaires dans /public/marketing/ */}
       <section className="border-t border-white/[0.06] px-4 py-12 md:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-4 md:overflow-visible">
+          <p className="section-label text-center md:text-left">Ils·elles sont chaud·e·s ce soir</p>
+          <h2 className="mt-2 text-center font-display text-2xl font-semibold md:text-left md:text-3xl">
+            Filles, garçons, couples — prêts à jouer
+          </h2>
+          <div className="mt-8 flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-4 md:overflow-visible">
             {LANDING_DEMO_PROFILES.map((p) => (
               <div key={p.name} className="premium-card w-[220px] shrink-0 snap-center overflow-hidden md:w-auto">
                 <div className="relative aspect-[3/4]">
-                  <Image src={p.photo} alt={p.name} fill className="object-cover" sizes="220px" />
+                  <MarketingImage src={p.photo} fallback={p.fallback} alt={p.name} fill className="object-cover" sizes="220px" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                   <div className="absolute bottom-0 p-4">
                     <p className="font-display text-lg font-semibold">{p.name}, {p.age}</p>
@@ -101,9 +108,9 @@ export default function LandingPage() {
       {/* 5+ piliers JALF */}
       <section className="border-t border-white/[0.06] px-4 py-16 md:px-8 md:py-24">
         <div className="mx-auto max-w-6xl">
-          <p className="section-label text-center">Tout pour connecter, jouer et explorer</p>
+          <p className="section-label text-center">Tout pour baiser, s&apos;exhiber et kiffer</p>
           <h2 className="mt-3 text-center font-display text-3xl font-semibold md:text-4xl">
-            Une expérience adulte complète
+            Plus sauvage qu&apos;une app de dating — moins timide que tu crois
           </h2>
           <div className="mt-12 grid gap-8 md:grid-cols-2">
             {LANDING_PILLARS.map((pillar) => (
@@ -113,9 +120,9 @@ export default function LandingPage() {
                 className="premium-card group overflow-hidden transition hover:ring-1 hover:ring-[#c9a962]/30"
               >
                 <div className="relative aspect-[16/9]">
-                  <Image
+                  <MarketingImage
                     src={pillar.image}
-                    alt=""
+                    fallback={pillar.fallback}
                     fill
                     className="object-cover transition duration-500 group-hover:scale-105"
                     sizes="(max-width:768px) 100vw, 50vw"
@@ -179,9 +186,9 @@ export default function LandingPage() {
       {/* Témoignages */}
       <section className="border-t border-white/[0.06] px-4 py-16 md:px-8 md:py-24">
         <div className="mx-auto max-w-6xl">
-          <p className="section-label text-center">Leurs désirs sont comblés</p>
+          <p className="section-label text-center">Ils·elles ont assumé leurs kinks</p>
           <h2 className="mt-3 text-center font-display text-3xl font-semibold md:text-4xl">
-            Une communauté audacieuse
+            Crue, directe, sans tabou
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-center text-sm text-[#9a8f8a]">
             Témoignages fictifs illustratifs — la confidentialité de nos membres est primordiale.
@@ -229,9 +236,9 @@ export default function LandingPage() {
 
       {/* CTA final */}
       <section className="border-t border-white/[0.06] px-4 py-16 text-center md:px-8 md:py-20">
-        <h2 className="font-display text-3xl font-bold md:text-4xl">Oubliez les tabous</h2>
+        <h2 className="font-display text-3xl font-bold md:text-4xl">Entre. Assume. Jouis.</h2>
         <p className="mx-auto mt-3 max-w-lg text-[#9a8f8a]">
-          Donnez-vous la chance de t&apos;épanouir. Ici, tout ce qui compte, c&apos;est le plaisir — partout dans le monde.
+          18+ · Inscription gratuite · Monde entier · Le reste, c&apos;est entre adultes consentants.
         </p>
         <Link href="/inscription" className="mt-8 inline-block">
           <Button variant="primary" size="lg">Créer mon profil gratuitement</Button>
