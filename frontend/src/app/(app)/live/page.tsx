@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Crown, Radio, Users, Video } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import type { LiveRoom } from "@/types";
@@ -10,6 +12,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export default function LivePage() {
+  const router = useRouter();
   const [rooms, setRooms] = useState<LiveRoom[]>([]);
   const [totalLive, setTotalLive] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -42,7 +45,7 @@ export default function LivePage() {
     setStarting(true);
     setError(null);
     try {
-      await api.live.start({
+      const room = await api.live.start({
         title: title.trim(),
         description: description.trim() || undefined,
         is_vip_only: vipOnly,
@@ -50,7 +53,7 @@ export default function LivePage() {
       setTitle("");
       setDescription("");
       setVipOnly(false);
-      await load();
+      router.push(`/live/${room.id}`);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Impossible de lancer le salon");
     } finally {
@@ -61,27 +64,9 @@ export default function LivePage() {
   const joinRoom = async (room: LiveRoom) => {
     try {
       await api.live.join(room.id);
-      await load();
+      router.push(`/live/${room.id}`);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Impossible de rejoindre");
-    }
-  };
-
-  const leaveRoom = async (room: LiveRoom) => {
-    try {
-      await api.live.leave(room.id);
-      await load();
-    } catch {
-      /* ignore */
-    }
-  };
-
-  const endRoom = async (room: LiveRoom) => {
-    try {
-      await api.live.end(room.id);
-      await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Impossible de terminer");
     }
   };
 
@@ -92,13 +77,12 @@ export default function LivePage() {
   return (
     <div>
       <header className="mb-8">
-        <p className="section-label">Phase 3 · Ultimate Live</p>
+        <p className="section-label">Phase 3b · WebRTC Live</p>
         <h1 className="mt-2 font-display text-3xl font-bold tracking-wide text-[#c9a962] md:text-4xl">
           SALONS LIVE
         </h1>
         <p className="mt-2 max-w-2xl text-[#9a8f8a]">
-          Rejoignez un salon en direct ou lancez le vôtre. La vidéo WebRTC arrive bientôt — pour l&apos;instant,
-          présence, titre et nombre de spectateurs.
+          Lancez votre cam ou rejoignez un salon — vidéo en direct via WebRTC, micro et caméra contrôlables.
         </p>
       </header>
 
@@ -113,8 +97,8 @@ export default function LivePage() {
         <div className="premium-card flex items-center gap-3 p-4">
           <Video className="h-8 w-8 text-[#c9a962]" />
           <div>
-            <p className="text-sm font-medium text-[#f5f0e8]">WebRTC · bientôt</p>
-            <p className="text-xs text-[#9a8f8a]">Diffusion vidéo en cours de développement</p>
+            <p className="text-sm font-medium text-[#f5f0e8]">WebRTC actif</p>
+            <p className="text-xs text-[#9a8f8a]">Diffusion cam · spectateurs en temps réel</p>
           </div>
         </div>
       </div>
@@ -123,16 +107,27 @@ export default function LivePage() {
         <p className="mb-4 rounded-lg bg-[#6b1d3a]/30 px-4 py-3 text-sm text-[#f5f0e8]">{error}</p>
       )}
 
-      {!myLiveRoom && (
+      {myLiveRoom ? (
+        <div className="premium-card mb-10 flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between md:p-8">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-[#c9a962]">Votre salon</p>
+            <h2 className="font-display text-lg font-semibold">{myLiveRoom.title}</h2>
+            <p className="text-sm text-[#9a8f8a]">Reprenez la diffusion ou terminez le live.</p>
+          </div>
+          <Link href={`/live/${myLiveRoom.id}`}>
+            <Button variant="gold" size="sm">Entrer dans mon salon</Button>
+          </Link>
+        </div>
+      ) : (
         <div className="premium-card mb-10 p-6 md:p-8">
-          <h2 className="font-display text-lg font-semibold">Lancer un salon</h2>
+          <h2 className="font-display text-lg font-semibold">Lancer un salon live</h2>
           <p className="mt-1 text-sm text-[#9a8f8a]">
-            Donnez un titre accrocheur — les membres verront votre salon dans la liste.
+            Caméra + micro requis pour diffuser. Les spectateurs vous voient en direct.
           </p>
           <div className="mt-4 space-y-4">
             <Input
               label="Titre du salon"
-              placeholder="Ex. : Soirée coquine · Duo dispo · Discussion libre"
+              placeholder="Ex. : Show lingerie · Duo en cam · Soirée coquine"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -151,10 +146,10 @@ export default function LivePage() {
                 className="rounded border-white/20 bg-white/5"
               />
               <Crown className="h-4 w-4 text-[#c9a962]" />
-              Salon VIP Gold uniquement (réservé aux membres VIP)
+              Salon VIP Gold uniquement
             </label>
             <Button variant="gold" size="sm" disabled={starting || title.trim().length < 3} onClick={startRoom}>
-              {starting ? "Lancement…" : "Démarrer le salon"}
+              {starting ? "Lancement…" : "Démarrer et ouvrir la cam"}
             </Button>
           </div>
         </div>
@@ -166,7 +161,7 @@ export default function LivePage() {
         <EmptyState
           icon={Video}
           title="Aucun salon en direct"
-          description="Soyez le premier·e à lancer un salon — ou revenez un peu plus tard."
+          description="Soyez le premier·e à lancer un show cam — ou revenez un peu plus tard."
         />
       ) : (
         <div className="space-y-4">
@@ -187,9 +182,7 @@ export default function LivePage() {
                     )}
                   </div>
                   <h3 className="mt-2 font-display text-xl font-semibold">{room.title}</h3>
-                  <p className="text-sm text-[#9a8f8a]">
-                    Hôte · {room.host_display_name}
-                  </p>
+                  <p className="text-sm text-[#9a8f8a]">Hôte · {room.host_display_name}</p>
                   {room.description && (
                     <p className="mt-2 text-sm text-[#f5f0e8]/80">{room.description}</p>
                   )}
@@ -199,14 +192,12 @@ export default function LivePage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
-                  {room.is_host ? (
-                    <Button variant="outline" size="sm" onClick={() => endRoom(room)}>
-                      Terminer
-                    </Button>
-                  ) : room.is_joined ? (
-                    <Button variant="outline" size="sm" onClick={() => leaveRoom(room)}>
-                      Quitter
-                    </Button>
+                  {room.is_host || room.is_joined ? (
+                    <Link href={`/live/${room.id}`}>
+                      <Button variant="gold" size="sm">
+                        {room.is_host ? "Diffuser" : "Regarder"}
+                      </Button>
+                    </Link>
                   ) : (
                     <Button variant="gold" size="sm" onClick={() => joinRoom(room)}>
                       Rejoindre
@@ -214,16 +205,10 @@ export default function LivePage() {
                   )}
                 </div>
               </div>
-              {room.is_joined && !room.is_host && (
-                <div className="mt-4 rounded-lg border border-[#c9a962]/20 bg-[#6b1d3a]/10 p-4 text-center text-sm text-[#9a8f8a]">
-                  Vous êtes dans le salon — le flux vidéo sera disponible dans une prochaine mise à jour.
-                </div>
-              )}
             </div>
           ))}
         </div>
       )}
-
     </div>
   );
 }

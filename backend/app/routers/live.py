@@ -12,6 +12,18 @@ from app.services.live_service import LiveService
 router = APIRouter(prefix="/live", tags=["live"])
 
 
+@router.get("/rooms/{room_id}", response_model=LiveRoomResponse)
+async def get_room(
+    room_id: UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await LiveService(db).get_room(user, room_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.get("/rooms", response_model=LiveRoomListResponse)
 async def list_rooms(
     user: User = Depends(get_current_user),

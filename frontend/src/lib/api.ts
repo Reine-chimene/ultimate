@@ -292,6 +292,7 @@ export const api = {
   },
   live: {
     list: () => request<{ rooms: LiveRoom[]; total_live: number }>("/live/rooms"),
+    get: (roomId: string) => request<LiveRoom>(`/live/rooms/${roomId}`),
     start: (data: { title: string; description?: string; is_vip_only?: boolean }) =>
       request<LiveRoom>("/live/rooms", { method: "POST", body: JSON.stringify(data) }),
     join: (roomId: string) =>

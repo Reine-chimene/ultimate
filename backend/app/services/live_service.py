@@ -57,6 +57,24 @@ class LiveService:
             updated_at=room.updated_at,
         )
 
+    async def get_room(self, user: User, room_id: UUID) -> LiveRoomResponse:
+        room = await self._get_live_room(room_id)
+        if room is None:
+            raise ValueError("Salon introuvable")
+        joined_ids: set[UUID] = set()
+        if room.host_id == user.id:
+            joined_ids.add(room.id)
+        else:
+            existing = await self.db.execute(
+                select(LiveRoomViewer).where(
+                    LiveRoomViewer.room_id == room_id,
+                    LiveRoomViewer.user_id == user.id,
+                )
+            )
+            if existing.scalar_one_or_none() is not None:
+                joined_ids.add(room.id)
+        return await self._room_response(room, user, joined_ids)
+
     async def list_live_rooms(self, user: User) -> LiveRoomListResponse:
         result = await self.db.execute(
             select(LiveRoom)

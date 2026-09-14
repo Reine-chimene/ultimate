@@ -9,6 +9,7 @@ from app.routers import (
     feed,
     likes,
     live,
+    live_ws,
     matches,
     meetings,
     messages,
@@ -43,3 +44,4 @@ api_router.include_router(world.router)
 api_router.include_router(travel.router)
 api_router.include_router(feed.router)
 api_router.include_router(live.router)
+api_router.include_router(live_ws.router)
