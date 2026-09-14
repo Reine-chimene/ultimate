@@ -20,7 +20,7 @@ export default function MessagesPage() {
 
   return (
     <div>
-      <PageHeader title="Messages" subtitle="Vos conversations avec vos matchs." />
+      <PageHeader title="Messages" subtitle="Conversations instantanées avec vos matchs — temps réel dans chaque chat." />
 
       {loading ? (
         <p className="py-12 text-center text-[#9a8f8a]">Chargement...</p>

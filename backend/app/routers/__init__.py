@@ -13,6 +13,7 @@ from app.routers import (
     matches,
     meetings,
     messages,
+    messages_ws,
     notifications,
     private_albums,
     profiles,
@@ -34,6 +35,7 @@ api_router.include_router(search.router)
 api_router.include_router(likes.router)
 api_router.include_router(matches.router)
 api_router.include_router(messages.router)
+api_router.include_router(messages_ws.router)
 api_router.include_router(availability.router)
 api_router.include_router(meetings.router)
 api_router.include_router(subscriptions.router)

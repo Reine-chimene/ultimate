@@ -9,6 +9,7 @@ from app.models.profile import Profile
 from app.models.social import Block, Conversation, Match, Message
 from app.models.user import User
 from app.schemas.match import ConversationResponse, MatchResponse, MessageCreate, MessageResponse
+from app.services.message_hub import message_hub
 from app.services.notification_service import NotificationService
 from app.services.profile_service import ProfileService
 
@@ -125,7 +126,12 @@ class MatchService:
             )
         await self.db.commit()
         await self.db.refresh(message)
-        return MessageResponse.model_validate(message)
+        response = MessageResponse.model_validate(message)
+        await message_hub.broadcast_payload(
+            match_id,
+            {"type": "message", "message": response.model_dump(mode="json")},
+        )
+        return response
 
     async def mark_messages_read(self, user: User, match_id: UUID) -> int:
         match = await self._get_match_for_user(match_id, user.id)
@@ -142,6 +148,16 @@ class MatchService:
         for msg in messages:
             msg.read_at = now
         await self.db.commit()
+        if messages:
+            await message_hub.broadcast_payload(
+                match_id,
+                {
+                    "type": "read",
+                    "reader_id": str(user.id),
+                    "read_at": now.isoformat(),
+                },
+                exclude=user.id,
+            )
         return len(messages)
 
     async def users_are_connected(self, user_a_id: UUID, user_b_id: UUID) -> bool:

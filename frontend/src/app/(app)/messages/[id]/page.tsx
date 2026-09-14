@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Send } from "lucide-react";
 import { api } from "@/lib/api";
+import { MessageRealtimeClient, type MessageRealtimeEvent } from "@/lib/message-realtime";
 import { useAuth } from "@/lib/auth";
 import type { Conversation, Match, Message } from "@/types";
 import { formatTime, getPrimaryPhoto, profileDisplayName } from "@/lib/utils";
@@ -18,32 +19,100 @@ export default function ConversationPage() {
   const [match, setMatch] = useState<Match | null>(null);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [otherTyping, setOtherTyping] = useState(false);
+  const [otherOnline, setOtherOnline] = useState(false);
+  const [connected, setConnected] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const rtRef = useRef<MessageRealtimeClient | null>(null);
+  const messageIdsRef = useRef<Set<string>>(new Set());
 
-  const load = async () => {
+  const appendMessage = useCallback((msg: Message) => {
+    if (messageIdsRef.current.has(msg.id)) return;
+    messageIdsRef.current.add(msg.id);
+    setConversation((prev) => {
+      if (!prev) return prev;
+      return { ...prev, messages: [...prev.messages, msg] };
+    });
+  }, []);
+
+  const load = useCallback(async () => {
     const [conv, matches] = await Promise.all([
       api.matches.conversation(matchId),
       api.matches.list(),
     ]);
+    messageIdsRef.current = new Set(conv.messages.map((m) => m.id));
     setConversation(conv);
     setMatch(matches.find((m) => m.id === matchId) ?? null);
     await api.messages.markRead(matchId);
-  };
+  }, [matchId]);
 
-  useEffect(() => { load(); }, [matchId]);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    const client = new MessageRealtimeClient({
+      matchId,
+      onEvent: (event: MessageRealtimeEvent) => {
+        if (event.type === "connected") {
+          setConnected(true);
+          return;
+        }
+        if (event.type === "message") {
+          appendMessage(event.message);
+          if (event.message.sender_id !== user?.id) {
+            void api.messages.markRead(matchId);
+          }
+          return;
+        }
+        if (event.type === "typing") {
+          if (event.user_id !== user?.id) {
+            setOtherTyping(event.is_typing);
+          }
+          return;
+        }
+        if (event.type === "read") {
+          setConversation((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              messages: prev.messages.map((m) =>
+                m.sender_id === user?.id && !m.read_at
+                  ? { ...m, read_at: event.read_at }
+                  : m,
+              ),
+            };
+          });
+          return;
+        }
+        if (event.type === "presence" && event.user_id !== user?.id) {
+          setOtherOnline(event.online);
+        }
+      },
+      onError: () => setConnected(false),
+    });
+    rtRef.current = client;
+    client.connect();
+    return () => {
+      client.disconnect();
+      rtRef.current = null;
+    };
+  }, [matchId, user?.id, appendMessage]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversation?.messages]);
+  }, [conversation?.messages, otherTyping]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
     setSending(true);
+    const content = text.trim();
+    setText("");
+    rtRef.current?.sendTyping(false);
     try {
-      await api.messages.send(matchId, text.trim());
-      setText("");
-      await load();
+      const msg = await api.messages.send(matchId, content);
+      appendMessage(msg);
     } finally {
       setSending(false);
     }
@@ -54,17 +123,33 @@ export default function ConversationPage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col">
       <header className="premium-card mb-4 flex items-center gap-3 p-4">
-        <Link href="/messages" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 transition hover:bg-white/10 lg:hidden">
+        <Link
+          href="/messages"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 transition hover:bg-white/10 lg:hidden"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         {other && (
           <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full ring-2 ring-[#c9a962]/30">
             <Image src={getPrimaryPhoto(other.photos)} alt={profileDisplayName(other)} fill className="object-cover" />
+            {otherOnline && (
+              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#0a0a0b] bg-green-500" />
+            )}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="truncate font-display text-lg font-semibold">{other ? profileDisplayName(other) : "Conversation"}</h1>
-          <p className="truncate text-xs text-[#9a8f8a]">{other?.city ?? "Match"}</p>
+          <h1 className="truncate font-display text-lg font-semibold">
+            {other ? profileDisplayName(other) : "Conversation"}
+          </h1>
+          <p className="truncate text-xs text-[#9a8f8a]">
+            {otherTyping
+              ? "écrit…"
+              : otherOnline
+                ? "En ligne"
+                : connected
+                  ? "Temps réel actif"
+                  : (other?.city ?? "Match")}
+          </p>
         </div>
         {other && (
           <Link href={`/profil/${other.id}`} className="shrink-0 text-xs text-[#c9a962] hover:underline">
@@ -95,21 +180,32 @@ export default function ConversationPage() {
                   <p className="text-sm leading-relaxed">{msg.content}</p>
                   <p className={`mt-1 text-[10px] ${isMine ? "text-white/60" : "text-[#9a8f8a]"}`}>
                     {formatTime(msg.created_at)}
+                    {isMine && msg.read_at && " · Lu"}
                     {unread && " · Nouveau"}
                   </p>
                 </div>
               </div>
             );
           })}
+          {otherTyping && (
+            <div className="flex justify-start">
+              <div className="rounded-2xl rounded-bl-md bg-white/[0.08] px-4 py-2.5">
+                <p className="text-sm text-[#9a8f8a] animate-pulse">…</p>
+              </div>
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
 
         <form onSubmit={handleSend} className="flex gap-2 border-t border-white/[0.06] p-4">
           <input
             className="input-field flex-1"
-            placeholder="Écrire un message..."
+            placeholder="Écrire un message…"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              rtRef.current?.notifyTypingInput();
+            }}
             maxLength={2000}
           />
           <button
